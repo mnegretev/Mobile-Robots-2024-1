@@ -282,16 +282,6 @@ Visualization Manager:
       Unreliable: false
       Use Timestamp: false
       Value: true
-    - Alpha: 0.699999988079071
-      Class: rviz/Map
-      Color Scheme: map
-      Draw Behind: false
-      Enabled: true
-      Name: AugmentedMap
-      Topic: /augmented_map
-      Unreliable: false
-      Use Timestamp: false
-      Value: true
     - Alpha: 1
       Buffer Length: 1
       Class: rviz/Path
@@ -357,88 +347,10 @@ Visualization Manager:
       Use rainbow: true
       Value: false
     - Class: rviz/TF
-      Enabled: true
+      Enabled: false
       Frame Timeout: 15
       Frames:
         All Enabled: false
-        back_wheel_link:
-          Value: true
-        base_center:
-          Value: false
-        base_link:
-          Value: true
-        base_torso_support:
-          Value: false
-        camera_link:
-          Value: false
-        head_link1:
-          Value: false
-        head_link2:
-          Value: false
-        laser_link:
-          Value: false
-        laser_link_rear:
-          Value: false
-        left_arm_grip_center:
-          Value: true
-        left_arm_grip_left:
-          Value: false
-        left_arm_grip_right:
-          Value: false
-        left_arm_link1:
-          Value: false
-        left_arm_link2:
-          Value: false
-        left_arm_link3:
-          Value: false
-        left_arm_link4:
-          Value: false
-        left_arm_link5:
-          Value: false
-        left_arm_link6:
-          Value: false
-        left_arm_link7:
-          Value: false
-        left_wheel_link:
-          Value: true
-        map:
-          Value: false
-        neck_link:
-          Value: false
-        odom:
-          Value: false
-        realsense_link:
-          Value: true
-        right_arm_grip_center:
-          Value: false
-        right_arm_grip_left:
-          Value: true
-        right_arm_grip_right:
-          Value: true
-        right_arm_link1:
-          Value: true
-        right_arm_link2:
-          Value: true
-        right_arm_link3:
-          Value: true
-        right_arm_link4:
-          Value: true
-        right_arm_link5:
-          Value: true
-        right_arm_link6:
-          Value: true
-        right_arm_link7:
-          Value: false
-        right_wheel_link:
-          Value: true
-        shoulders_left_link:
-          Value: false
-        shoulders_right_link:
-          Value: false
-        spine_link:
-          Value: false
-        torso_link:
-          Value: false
       Marker Alpha: 1
       Marker Scale: 1
       Name: TF
@@ -446,131 +358,9 @@ Visualization Manager:
       Show Axes: true
       Show Names: false
       Tree:
-        map:
-          odom:
-            base_link:
-              base_center:
-                back_wheel_link:
-                  {}
-                base_torso_support:
-                  {}
-                laser_link:
-                  {}
-                laser_link_rear:
-                  {}
-                left_wheel_link:
-                  {}
-                right_wheel_link:
-                  {}
-              torso_link:
-                spine_link:
-                  head_link1:
-                    head_link2:
-                      neck_link:
-                        camera_link:
-                          realsense_link:
-                            {}
-                  shoulders_left_link:
-                    left_arm_link1:
-                      left_arm_link2:
-                        left_arm_link3:
-                          left_arm_link4:
-                            left_arm_link5:
-                              left_arm_link6:
-                                left_arm_link7:
-                                  left_arm_grip_center:
-                                    {}
-                                  left_arm_grip_left:
-                                    {}
-                                  left_arm_grip_right:
-                                    {}
-                  shoulders_right_link:
-                    right_arm_link1:
-                      right_arm_link2:
-                        right_arm_link3:
-                          right_arm_link4:
-                            right_arm_link5:
-                              right_arm_link6:
-                                right_arm_link7:
-                                  right_arm_grip_center:
-                                    {}
-                                  right_arm_grip_left:
-                                    {}
-                                  right_arm_grip_right:
-                                    {}
+        {}
       Update Interval: 0
-      Value: true
-    - Class: rviz/Marker
-      Enabled: true
-      Marker Topic: /vision/object_recognition/markers
-      Name: ObjRecoMarkers
-      Namespaces:
-        {}
-      Queue Size: 100
-      Value: true
-    - Alpha: 1
-      Autocompute Intensity Bounds: true
-      Autocompute Value Bounds:
-        Max Value: 10
-        Min Value: -10
-        Value: true
-      Axis: Z
-      Channel Name: intensity
-      Class: rviz/PointCloud2
-      Color: 255; 255; 255
-      Color Transformer: RGB8
-      Decay Time: 0
-      Enabled: true
-      Invert Rainbow: false
-      Max Color: 255; 255; 255
-      Min Color: 0; 0; 0
-      Name: ObjRecoResultCloud
-      Position Transformer: XYZ
-      Queue Size: 10
-      Selectable: true
-      Size (Pixels): 3
-      Size (m): 0.009999999776482582
-      Style: Flat Squares
-      Topic: /vision/obj_reco/resulting_cloud
-      Unreliable: false
-      Use Fixed Frame: true
-      Use rainbow: true
-      Value: true
-    - Class: rviz/MarkerArray
-      Enabled: true
-      Marker Topic: /vision/obj_reco/marker_array
-      Name: ObjRecoMrkArray
-      Namespaces:
-        {}
-      Queue Size: 100
-      Value: true
-    - Class: rviz/Marker
-      Enabled: true
-      Marker Topic: /hri/leg_finder/hypothesis
-      Name: LegsHypothesis
-      Namespaces:
-        {}
-      Queue Size: 100
-      Value: true
-    - Alpha: 1
-      Class: rviz/PointStamped
-      Color: 204; 41; 204
-      Enabled: true
-      History Length: 1
-      Name: LegsPose
-      Queue Size: 10
-      Radius: 0.20000000298023224
-      Topic: /hri/leg_finder/leg_pose
-      Unreliable: false
-      Value: true
-    - Class: rviz/MarkerArray
-      Enabled: true
-      Marker Topic: /navigation/obs_detector/pot_field_markers
-      Name: RejectionForces
-      Namespaces:
-        {}
-      Queue Size: 100
-      Value: true
+      Value: false
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -615,9 +405,9 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 1.119795322418213
+      Pitch: 1.0247968435287476
       Target Frame: <Fixed Frame>
-      Yaw: 5.803586959838867
+      Yaw: 5.623587131500244
     Saved: ~
 Window Geometry:
   Displays:
