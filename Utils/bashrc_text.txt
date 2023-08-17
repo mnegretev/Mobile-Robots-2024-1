@@ -1,0 +1,27 @@
+#
+#Options for a nice prompt when using git
+#
+source ~/git-completion.bash
+#colors
+green="\[\033[01;32m\]"
+blue="\[\033[01;34m\]"
+purple="\[\033[01;35m\]"
+red="\[\033[01;31m\]"
+yellow="\[\033[01;33m\]"
+reset="\[\033[0m\]"
+
+# Change command prompt
+source ~/git-prompt.sh
+export GIT_PS1_SHOWDIRTYSTATE=1
+# '\u' adds the name of the current user to the prompt
+# '\$(__git_ps1)' adds git-related stuff
+# '\W' adds the name of the current directory
+export PS1="$red\u$yellow@$purple\h$yellow:$green\$(__git_ps1)$blue\W$green.->$reset"
+
+source /opt/ros/noetic/setup.bash
+source ~/Mobile-Robots-2024-1/catkin_ws/devel/setup.bash
+alias em="emacs -nw"
+alias ..="cd .."
+alias ...="cd ../.."
+alias ....="cd ../../.."
+EDITOR="emacs -nw"
