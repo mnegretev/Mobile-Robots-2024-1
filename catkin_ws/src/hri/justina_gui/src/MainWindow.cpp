@@ -359,7 +359,7 @@ void MainWindow::navBtnCalcPath_pressed()
 	return;
     }
 
-
+    qtRosNode->call_get_plan(startX, startY, goalX, goalY);
 }
 
 void MainWindow::navBtnExecPath_pressed()
