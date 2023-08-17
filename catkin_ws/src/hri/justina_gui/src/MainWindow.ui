@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>JUSTINA GUI - By Marcosoft</string>
+   <string>Mobile Robots - Marco Negrete</string>
   </property>
   <property name="styleSheet">
    <string notr="true">QGroupBox {
