@@ -32,6 +32,7 @@ def main():
     rospy.Subscriber("/hardware/scan", LaserScan, callback_scan)
     pub_cmd_vel = rospy.Publisher("/cmd_vel", Twist, queue_size=10)
     loop = rospy.Rate(10)
+    
     global obstacle_detected
     obstacle_detected = False
     while not rospy.is_shutdown():
@@ -43,8 +44,8 @@ def main():
         # Publish the Twist message using the already declared publisher 'pub_cmd_vel'.
         #
         msg_cmd_vel = Twist()
-        msg_cmd_vel.linear.x = 0 if obstacle_detected else 0.3
-        pub_cmd_vel.publish(msg_cmd_vel)
+	msg_cmd_vel.linear.x = 0 if obstacle_detected else 0.3
+	msg_cmd_vel.publish(msg_cmd_vel)
         loop.sleep()
 
 
