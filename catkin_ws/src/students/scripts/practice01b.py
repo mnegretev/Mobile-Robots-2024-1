@@ -115,6 +115,7 @@ def callback_scan(msg):
 def main():
     global pub_line_markers, listener, distance_threshold, min_points_counting, rho_tolerance, theta_tolerance
     print("INITIALIZING SPLIT AND MERGE ALGORITHM")
+    print('López Esquivel Andrés')
     rospy.init_node("split_and_merge")
     rospy.Subscriber("/hardware/scan", LaserScan, callback_scan)
     pub_line_markers = rospy.Publisher("/navigation/segmented_lines_marker", Marker, queue_size=1)
@@ -125,10 +126,15 @@ def main():
     # TODO:
     # Modify the following parameters and compare the results:
     #
-    distance_threshold  = rospy.get_param("~dist", 0.1)     #Distance threshold to consider a point as part of a candidate line. 
-    min_points_counting = rospy.get_param("~points", 1)     #Minimum number of points a line should contain.
-    rho_tolerance       = rospy.get_param("~rho", 0.05)     #RHO and THETA error tolerance to consider two lines as one.
-    theta_tolerance     = rospy.get_param("~theta", 0.05)
+    #   old_values:
+    #   distance_threshold = 0.1
+    #   min_points_counting = 1
+    #   rho_tolerance = 0.05
+    #   theta_tolerance = 0.05
+    distance_threshold  = rospy.get_param("~dist", 0.08)     #Distance threshold to consider a point as part of a candidate line. 
+    min_points_counting = rospy.get_param("~points", 6)     #Minimum number of points a line should contain.
+    rho_tolerance       = rospy.get_param("~rho", 0.005)     #RHO and THETA error tolerance to consider two lines as one.
+    theta_tolerance     = rospy.get_param("~theta", 0.005)
     print("Trying to find lines with parameters:")
     print("Distance threshold: " + str(distance_threshold))
     print("Min points per line: " + str(min_points_counting))
