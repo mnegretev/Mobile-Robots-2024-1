@@ -6,7 +6,7 @@
 # Instructions:
 # Test different parameteres and compare the results.
 # Parameters:
-# 
+# _d_dist:=0.2 points:=3 _rho:=0.09 _theta:=0.09
 #
 
 import rospy
@@ -17,7 +17,7 @@ from sensor_msgs.msg   import LaserScan
 from geometry_msgs.msg import Twist, Point
 from visualization_msgs.msg import Marker
 
-NAME = "FULL NAME"
+NAME = "ARMANDO UGALDE VELASCO"
 
 def adjust_line(points):
     [xm,ym] = numpy.mean(points, 0)
