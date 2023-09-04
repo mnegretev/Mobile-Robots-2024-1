@@ -22,12 +22,12 @@ def get_inflated_map(static_map, inflation_cells):
     inflated = numpy.copy(static_map)
     [height, width] = static_map.shape
 
-for i in range(0, height);
-   for j in range(0, width);
-       if static_map[i,j]>50:
-           For k1 in range(-inflation_cells, inflation_cells+1);
-            For k2 in range(-inflation_cells, inflation_cells+1);
-           Inflated[i+k1, j+k2] =100
+    for i in range(0, height);
+       for j in range(0, width);
+           if static_map[i,j]>50:
+               for k1 in range(-inflation_cells, inflation_cells+1);
+               for k2 in range(-inflation_cells, inflation_cells+1);
+               inflated[i+k1, j+k2] =100
         
     return inflated
 
