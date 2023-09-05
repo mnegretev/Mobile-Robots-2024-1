@@ -17,7 +17,7 @@ from sensor_msgs.msg   import LaserScan
 from geometry_msgs.msg import Twist, Point
 from visualization_msgs.msg import Marker
 
-NAME = "FULL NAME"
+NAME = "JARQUIN LOPEZ DANIEL EDUARDO"
 
 def adjust_line(points):
     [xm,ym] = numpy.mean(points, 0)
@@ -125,10 +125,10 @@ def main():
     # TODO:
     # Modify the following parameters and compare the results:
     #
-    distance_threshold  = rospy.get_param("~dist", 0.1)     #Distance threshold to consider a point as part of a candidate line. 
-    min_points_counting = rospy.get_param("~points", 1)     #Minimum number of points a line should contain.
-    rho_tolerance       = rospy.get_param("~rho", 0.05)     #RHO and THETA error tolerance to consider two lines as one.
-    theta_tolerance     = rospy.get_param("~theta", 0.05)
+    distance_threshold  = rospy.get_param("~dist", 0.2)     #Distance threshold to consider a point as part of a candidate line. 
+    min_points_counting = rospy.get_param("~points", 3)     #Minimum number of points a line should contain.
+    rho_tolerance       = rospy.get_param("~rho", 0.2)     #RHO and THETA error tolerance to consider two lines as one.
+    theta_tolerance     = rospy.get_param("~theta", 0.2)
     print("Trying to find lines with parameters:")
     print("Distance threshold: " + str(distance_threshold))
     print("Min points per line: " + str(min_points_counting))
