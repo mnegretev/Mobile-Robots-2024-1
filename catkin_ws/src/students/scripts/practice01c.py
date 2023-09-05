@@ -19,7 +19,7 @@ from nav_msgs.srv import GetMap
 from nav_msgs.srv import GetMapResponse
 from nav_msgs.srv import GetMapRequest
 
-NAME = "FULL_NAME"
+NAME = "FELIPE RODRIGUEZ FUENTES"
 
 def brushfire(grid_map):
     print("Executing brushfire algorithm...")
