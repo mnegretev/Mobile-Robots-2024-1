@@ -18,6 +18,7 @@ from geometry_msgs.msg import Twist, Point
 from visualization_msgs.msg import Marker
 
 NAME = "FULL NAME"
+NAME = "Romero Trujillo Jerson Gerardo"
 
 def adjust_line(points):
     [xm,ym] = numpy.mean(points, 0)
