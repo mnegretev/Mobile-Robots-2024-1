@@ -19,7 +19,7 @@ from nav_msgs.srv import GetMap
 from nav_msgs.srv import GetMapResponse
 from nav_msgs.srv import GetMapRequest
 
-NAME = "FULL_NAME"
+NAME = "Romero Trujillo Jerson Gerardo"
 
 def brushfire(grid_map):
     print("Executing brushfire algorithm...")
@@ -52,9 +52,13 @@ def brushfire(grid_map):
                 Q.put([i+k1, j+k2])
                 #distances[i+k1, j+k2] = d + 2
                 distances[i+k1, j+k2] = d + math.sqrt(2.0)
+                distances[i+k1, j+k2] = d + 2
+                #distances[i+k1, j+k2] = d + math.sqrt(2.0)
             else:
                 #distances[i+k1, j+k2] = min(distances[i+k1, j+k2], d+ 2)
                 distances[i+k1, j+k2] = min(distances[i+k1, j+k2], d+ math.sqrt(2.0))
+                distances[i+k1, j+k2] = min(distances[i+k1, j+k2], d+ 2)
+                #distances[i+k1, j+k2] = min(distances[i+k1, j+k2], d+ math.sqrt(2.0))
     return distances
 
 def find_maxima(distances):
