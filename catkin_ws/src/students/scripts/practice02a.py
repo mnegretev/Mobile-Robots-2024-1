@@ -15,7 +15,7 @@ from nav_msgs.srv import GetMap
 from nav_msgs.srv import GetMapResponse
 from nav_msgs.srv import GetMapRequest
 
-NAME = "FULL_NAME"
+NAME = "López Esquivel Andrés"
 
 def get_cost_map(static_map, cost_radius):
     if cost_radius > 20:
@@ -42,7 +42,16 @@ def get_cost_map(static_map, cost_radius):
     #  [ 3 X 3 3 3 2]
     #  [ 3 3 3 X 3 2]]
     # Cost_radius indicate the number of cells around obstacles with costs greater than zero.
-    
+    rc_values = list(range(-1 * cost_radius, cost_radius + 1))
+    for i in range(height):
+        for j in range(width):
+            # If cell is occupied, calculate the cost for cost_radius
+            if static_map[i][j] > 50:
+                for k1 in rc_values:
+                    for k2 in rc_values:
+                        C = cost_radius - max(abs(k1),abs(k2)) + 1
+                        cost_map[i + k1][j + k2] = max(C, cost_map[i + k1][j + k2])
+            
     return cost_map
 
 def callback_cost_map(req):
