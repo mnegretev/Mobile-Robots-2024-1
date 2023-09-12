@@ -13,7 +13,7 @@ import rospy
 from sensor_msgs.msg   import LaserScan
 from geometry_msgs.msg import Twist
 
-NAME = "FULL NAME"
+NAME = "Cesar de Jesús González Chávez"
 
 def callback_scan(msg):
     global obstacle_detected
