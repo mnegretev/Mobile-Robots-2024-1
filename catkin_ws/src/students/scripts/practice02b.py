@@ -62,11 +62,11 @@ def a_star(start_r, start_c, goal_r, goal_c, grid_map, cost_map):
             # TODO:
             # Modify calculations of 'g' and 'h' to use euclidean distance
             # instead of Manhattan distance
-            #
+            h = 0
             g = g_values[row, col] + abs(row-r) + abs(col-c) + cost_map[r][c]
-            h = abs(goal_r - r) + abs(goal_c - c)
-            # g = g_values[row, col] + math.sqrt((row-r)**2 + (col - c)**2) + cost_map[r][c]
-            # h = math.sqrt((goal_r-r)**2 + (goal_c - c)**2)
+            #h = abs(goal_r - r) + abs(goal_c - c)
+            #g = g_values[row, col] + math.sqrt((row-r)**2 + (col - c)**2) + cost_map[r][c]
+            #h = math.sqrt((goal_r-r)**2 + (goal_c - c)**2)
             #
             
             f = g + h                         
