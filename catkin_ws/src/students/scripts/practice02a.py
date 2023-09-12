@@ -15,7 +15,7 @@ from nav_msgs.srv import GetMap
 from nav_msgs.srv import GetMapResponse
 from nav_msgs.srv import GetMapRequest
 
-NAME = "FULL_NAME"
+NAME = "Moreno Duran JAime"
 
 def get_cost_map(static_map, cost_radius):
     if cost_radius > 20:
@@ -43,6 +43,7 @@ def get_cost_map(static_map, cost_radius):
     #  [ 3 3 3 X 3 2]]
     # Cost_radius indicate the number of cells around obstacles with costs greater than zero.
     
+          
     return cost_map
 
 def callback_cost_map(req):
