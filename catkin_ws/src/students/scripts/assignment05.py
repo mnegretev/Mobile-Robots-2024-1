@@ -27,8 +27,8 @@ listener    = None
 
 v_max = 0.5 #Defino los valores maximos y las constantes del control de posicion
 w_max = 1.0
-alpha = 0.5
-betha = 0.5
+alpha = 1.0
+beta = 1.0
 
 def calculate_control(robot_x, robot_y, robot_a, goal_x, goal_y):
     cmd_vel = Twist()
