@@ -81,6 +81,7 @@ def follow_path(path):
     # Send zero speeds (otherwise, robot will keep moving after reaching last point)
     # Publish a 'True' using the pub_goal_reached publisher
     #
+    
     current_point = 0
     [local_xg,  local_yg ] = path[current_point]
     [global_xg, global_yg] = path[len(path)-1]
