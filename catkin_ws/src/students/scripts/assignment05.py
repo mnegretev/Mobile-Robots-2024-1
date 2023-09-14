@@ -42,6 +42,7 @@ def calculate_control(robot_x, robot_y, robot_a, goal_x, goal_y):
     # and return it (check online documentation for the Twist message).
     # Remember to keep error angle in the interval (-pi,pi]
     #
+    
     v_max = 0.5
     w_max = 1.0
     alpha = 0.2
