@@ -26,10 +26,10 @@ loop        = None
 listener    = None
 
 
-v_max = 0.5  # Velocidad lineal máxima
-w_max = 1.0  # Velocidad angular máxima
-alpha = 1.0  # Constante alpha
-beta = 1.0   # Constante beta
+v_max = 0.5  # V lineal máxima
+w_max = 1.0  # V angular máxima
+alpha = 1.0  # Alpha
+beta = 1.0   # Beta
 
 def calculate_control(robot_x, robot_y, robot_a, goal_x, goal_y):
     cmd_vel = Twist()
