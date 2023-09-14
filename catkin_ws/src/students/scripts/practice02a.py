@@ -67,7 +67,7 @@ def main():
     rospy.Service('/cost_map'    , GetMap, callback_cost_map)
     loop = rospy.Rate(1)
     
-    cost_radius = rospy.get_param("~cost_radius", 0.1)
+    cost_radius = rospy.get_param("~cost_radius", 0.35)
     while not rospy.is_shutdown():
         cost_map_data = get_cost_map(grid_map, round(cost_radius/res))
         cost_map_data = numpy.ravel(numpy.reshape(cost_map_data, (width*height, 1)))
