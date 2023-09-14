@@ -35,7 +35,7 @@ def calculate_control(robot_x, robot_y, robot_a, goal_x, goal_y):
     elif error_a <= -math.pi:
         error_a += 2 * math.pi
     
-    v_max = 1.0  
+    v_max = 0.5
     w_max = 1.0  
     alpha = 1.0  
     beta = 1.0   
