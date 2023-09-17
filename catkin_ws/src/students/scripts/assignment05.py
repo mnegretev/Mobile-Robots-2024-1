@@ -25,17 +25,19 @@ pub_cmd_vel = None
 loop        = None
 listener    = None
 
+v_max = 0.5
+w_max = 1
+alpha = 0.8
+beta = 0.5
+
 def calculate_control(robot_x, robot_y, robot_a, goal_x, goal_y):
     cmd_vel = Twist()
     
     #
     # TODO:
-    v_max = 0.5
-    w_max = 1
-    alpha = 1
-    beta = 1
     error_a = math.atan2(goal_y - robot_y, goal_x - robot_x) - robot_a
-    error_a = (error_a + math.pi())%(2*math.pi())-math.pi()
+    if error_a > - math.pi or error_a < math.pi:
+        error_a = (error_a + math.pi)%(2*math.pi) - math.pi
     # Implement the control law given by:
     #
     v = v_max*math.exp(-error_a*error_a/alpha)
