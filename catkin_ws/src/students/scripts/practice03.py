@@ -15,7 +15,7 @@ from geometry_msgs.msg import Pose, PoseStamped, Point
 from navig_msgs.srv import SmoothPath
 from navig_msgs.srv import SmoothPathResponse
 
-NAME = "FULL NAME"
+NAME = "GUillen Castillo Jorge Luis"
 
 msg_smooth_path = Path()
 
