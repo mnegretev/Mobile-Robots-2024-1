@@ -15,7 +15,7 @@ from geometry_msgs.msg import Pose, PoseStamped, Point
 from navig_msgs.srv import SmoothPath
 from navig_msgs.srv import SmoothPathResponse
 
-NAME = "FULL NAME"
+NAME = "Eduardo Flores Rivas"
 
 msg_smooth_path = Path()
 
@@ -36,7 +36,12 @@ def smooth_path(Q, alpha, beta):
     epsilon = 0.1                       
     steps   = 0
 
-
+    nabla[0], nabla[-1] = 0, 0
+    while numpy.linalg.norm(nabla) > tol*len(P) and steps <10000:
+    	for i in range(1, len(Q)-1):
+    		nabla[i] = alpha*(2*P[i] - P[i-1] - P[i+1]) + beta*(P[i] - Q[i])
+    	P = P - epsilon*nabla
+    	steps += 1
     
     print("Path smoothed succesfully after " + str(steps) + " iterations")
     return P
@@ -57,8 +62,8 @@ def main():
     pub_path = rospy.Publisher('/path_planning/smooth_path', Path, queue_size=10)
     loop = rospy.Rate(1)
     msg_smooth_path.header.frame_id = "map"
-    alpha = rospy.get_param("~alpha", 0.9)
-    beta  = rospy.get_param("~beta" , 0.1)
+    alpha = rospy.get_param("~alpha", 0.95)
+    beta  = rospy.get_param("~beta" , 0.05)
     while not rospy.is_shutdown():
         pub_path.publish(msg_smooth_path)
         loop.sleep()

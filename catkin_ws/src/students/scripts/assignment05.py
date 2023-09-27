@@ -12,7 +12,7 @@
 import rospy
 import tf
 import math
-from std_msgs.msg import Bool
+from std_msgs.msg import Bool, Float64
 from nav_msgs.msg import Path
 from nav_msgs.srv import GetPlan, GetPlanRequest
 from navig_msgs.srv import SmoothPath, SmoothPathRequest
@@ -28,7 +28,7 @@ listener    = None
 def calculate_control(robot_x, robot_y, robot_a, goal_x, goal_y):
     cmd_vel = Twist()
     alpha = 0.1
-    beta = 0.3
+    beta = 0.1
     v_max = 0.5
     w_max = 1
     num_pi = math.pi
@@ -87,7 +87,9 @@ def follow_path(path):
     local_error  = math.sqrt((local_xg-robot_x) **2 + (local_yg-robot_y) **2)
     
     while not rospy.is_shutdown() and global_error > 0.1:
-        pub_cmd_vel.publish(calculate_control(robot_x, robot_y, robot_a, local_xg, local_yg))
+        cmd_vel = calculate_control(robot_x, robot_y, robot_a, local_xg, local_yg)
+        pub_cmd_vel.publish(cmd_vel)
+        pub_linear_speed.publish(cmd_vel.linear.x)
         loop.sleep()
         [robot_x, robot_y, robot_a] = get_robot_pose(listener)
         local_error  = math.sqrt((local_xg-robot_x) **2 + (local_yg-robot_y) **2)
@@ -124,11 +126,12 @@ def get_robot_pose(listener):
     return [0,0,0]
 
 def main():
-    global pub_cmd_vel, pub_goal_reached, loop, listener
+    global pub_cmd_vel, pub_goal_reached, loop, listener, pub_linear_speed
     print("ASSINGMENT 05 - " + NAME)
     rospy.init_node("assignment05")
     rospy.Subscriber('/move_base_simple/goal', PoseStamped, callback_global_goal)
     pub_cmd_vel = rospy.Publisher('/cmd_vel', Twist, queue_size=10)
+    pub_linear_speed = rospy.Publisher('linear_speed', Float64, queue_size=10)
     pub_goal_reached = rospy.Publisher('/navigation/goal_reached', Bool, queue_size=10)
     listener = tf.TransformListener()
     loop = rospy.Rate(10)
