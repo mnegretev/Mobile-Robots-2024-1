@@ -25,15 +25,16 @@ pub_cmd_vel = None
 loop        = None
 listener    = None
 
-#Variables constantes
-v_max = 0.5
-w_max = 1.0
-alpha = 1.0
-beta = 1.0
 
 def calculate_control(robot_x, robot_y, robot_a, goal_x, goal_y):
     cmd_vel = Twist()
     
+    #Variables constantes
+    v_max = 0.5
+    w_max = 1.0
+    alpha = 0.3
+    beta = 2
+
     #
     # TODO:
     # Implement the control law given by:
