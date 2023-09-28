@@ -1,0 +1,25 @@
+<launch>
+  <include file="$(find surge_et_ambula)/launch/justina/gazebo_simul/justina_hardware_gazebo.launch">
+    <arg name="posx"  value="5.0"/>
+    <arg name="posy"  value="9.0"/>
+    <arg name="posz"  value="0.05"/>
+    <arg name="yaw"   value="2.20"/>
+    <arg name="world" value="appartment"/>
+  </include>
+  
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find config_files)/rviz/obstacle_avoidance.rviz"/>
+  
+  <node name="justina_gui" pkg="justina_gui" type="justina_gui_node" output="screen">
+    <param name="la_predefined" value="$(find config_files)/justina/manipulation/la_predefined.yaml"/>
+    <param name="ra_predefined" value="$(find config_files)/justina/manipulation/ra_predefined.yaml"/>
+    <param name="hd_predefined" value="$(find config_files)/justina/manipulation/hd_predefined.yaml"/>
+  </node>
+
+  <include file="$(find surge_et_ambula)/launch/justina/gazebo_simul/justina_gazebo_controllers.launch"/>
+  <include file="$(find surge_et_ambula)/launch/justina/navigation.launch">
+    <arg name="initial_pose_x" value="5.97"/>
+    <arg name="initial_pose_y" value="2.12"/>
+    <arg name="initial_pose_a" value="-0.94"/>
+  </include>
+  
+</launch>
