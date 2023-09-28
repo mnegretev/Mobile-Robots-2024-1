@@ -64,7 +64,7 @@ def main():
     loop = rospy.Rate(1)
     msg_smooth_path.header.frame_id = "map"
     alpha = rospy.get_param("~alpha", 0.9)
-    beta  = rospy.get_param("~beta" , 0.1)
+    beta  = rospy.get_param("~beta" , 0.15)
     while not rospy.is_shutdown():
         pub_path.publish(msg_smooth_path)
         loop.sleep()
