@@ -33,7 +33,7 @@ def calculate_control(robot_x, robot_y, robot_a, goal_x, goal_y):
     v_max = 0.5
     w_max = 1.0
     alpha = 0.3
-    beta = 2
+    beta = 1
 
     #
     # TODO:
