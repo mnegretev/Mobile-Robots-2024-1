@@ -211,11 +211,11 @@ tf::Transform get_map_to_odom_transform(geometry_msgs::Pose2D odom, geometry_msg
 
 int main(int argc, char** argv)
 {
-    std::cout << "PRACTICE 07 - " << FULL_NAME << std::endl;
-    ros::init(argc, argv, "practice07");
+    std::cout << "PRACTICE 04 - " << FULL_NAME << std::endl;
+    ros::init(argc, argv, "practice04");
     ros::NodeHandle n("~");
     ros::Rate loop(20);
-    ros::Subscriber sub_scan      = n.subscribe("/scan", 1, callback_laser_scan);
+    ros::Subscriber sub_scan      = n.subscribe("/hardware/scan", 1, callback_laser_scan);
     ros::Publisher  pub_particles = n.advertise<geometry_msgs::PoseArray>("/particle_cloud", 1); 
     tf::TransformListener listener;
     tf::TransformBroadcaster broadcaster;
@@ -264,7 +264,7 @@ int main(int argc, char** argv)
     ros::service::waitForService("/static_map", ros::Duration(20));
     ros::service::call("/static_map", srv_get_map);
     static_map = srv_get_map.response.map;
-    real_scan = *ros::topic::waitForMessage<sensor_msgs::LaserScan>("/scan");
+    real_scan = *ros::topic::waitForMessage<sensor_msgs::LaserScan>("/hardware/scan");
     real_sensor_info = real_scan;
     real_sensor_info.angle_increment *= LASER_DOWNSAMPLING;
     std::cout << "Real Scan Info: Number of readings: " << real_scan.ranges.size() << std::endl;
