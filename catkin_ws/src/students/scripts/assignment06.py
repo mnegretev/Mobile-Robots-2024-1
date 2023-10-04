@@ -19,7 +19,7 @@ from geometry_msgs.msg import Point
 from visualization_msgs.msg import Marker
 from sensor_msgs.msg import LaserScan
 
-NAME = "Villeda Hernandez Erick Ricardo"
+NAME = "Villeda Hernandez Erick Ricardo."
 
 listener    = None
 pub_cmd_vel = None
