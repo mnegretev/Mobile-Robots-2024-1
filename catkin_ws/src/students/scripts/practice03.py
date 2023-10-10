@@ -41,7 +41,6 @@ def smooth_path(Q, alpha, beta):
             nabla[i] = alpha*(2*P[i] - P[i-1] - P[i+1]) + beta*(P[i] - Q[i])
         P = P - epsilon*nabla
         steps += 1
-    
     print("Path smoothed succesfully after " + str(steps) + " iterations")
     return P
 
