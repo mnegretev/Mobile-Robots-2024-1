@@ -19,7 +19,7 @@ from geometry_msgs.msg import Point
 from visualization_msgs.msg import Marker
 from sensor_msgs.msg import LaserScan
 
-NAME = "Villeda Hernandez Erick Ricardo"
+NAME = "Villeda Hernandez Erick Ricardo."
 
 listener    = None
 pub_cmd_vel = None
@@ -65,7 +65,7 @@ def attraction_force(robot_x, robot_y, goal_x, goal_y):
     #
     zeta = 1.0
     force_x, force_y = robot_x - goal_x, robot_y - goal_y
-    mag = math.sqrt(force_x ** 2 + force_y ** 2)
+    mag = math.sqrt(force_x**2 + force_y**2)
     
     return [zeta*force_x/mag, zeta*force_y/mag] if mag != 0 else [0, 0]
 
@@ -83,17 +83,15 @@ def rejection_force(robot_x, robot_y, robot_a, laser_readings):
     # of the resulting rejection force w.r.t. MAP.
     # WARNING: Some laser readings could have distance=0 due to simulated reading errors. 
     #
-    [force_x, force_y] = [0, 0]
-    N = len(laser_readings)
-
     d0 = 1.0
-    eta = 3.0
+    eta = 1.0
+    [force_x, force_y] = [0, 0]
     for [d, theta] in laser_readings:
-    	mag = 0 if d >= d0 or d <= 0 else eta * math.sqrt((1/d) - (1/d0))
+    	mag = 0 if d >= d0 or d <= 0 else eta*math.sqrt(1/d - 1/d0)
     	force_x += mag * math.cos(theta + robot_a)
     	force_y += mag * math.sin(theta + robot_a)
 
-    return [force_x / N, force_y / N]
+    return [force_x / len(laser_readings), force_y / len(laser_readings)]
 
 def callback_pot_fields_goal(msg):
     goal_x = msg.pose.position.x
