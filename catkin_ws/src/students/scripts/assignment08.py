@@ -111,16 +111,20 @@ def jacobian(q, Ti, Wi):
     #     FOR i = 1,..,7:
     #           i-th column of J = ( FK(i-th row of q_next) - FK(i-th row of q_prev) ) / (2*delta_q)
     #     RETURN J
-    #     
+    #
+
     J = numpy.asarray([[0.0 for a in q] for i in range(6)])            # J 6x7 full of zeros
-    Q = q.tolist()
-    q_next = [Q[:i] + [Q[i] + delta_q] + Q[i + 1:] for i in range(len(Q))] # 7 x 7
-    q_prev = [Q[:i] + [Q[i] - delta_q] + Q[i + 1:] for i in range(len(Q))] # 7 x 7
+    q_next = numpy.asarray([[0.0 for j in range(len(q))] for i in range(len(q))])
+    q_prev = numpy.asarray([[0.0 for j in range(len(q))] for i in range(len(q))])
+
+    for i in range(len(q)):
+        q_next[i] = numpy.concatenate((q[:i],q[i] + delta_q, q[i+1:]), axis = None)
+        q_prev[i] = numpy.concatenate((q[:i],q[i] - delta_q, q[i+1:]), axis = None)
     
-    for i in range(len(Q)):
+    for i in range(len(q)):
         FK_next = forward_kinematics(q = q_next[i], Ti = Ti, Wi = Wi) # 6 x 1
         FK_prev = forward_kinematics(q = q_prev[i], Ti = Ti, Wi = Wi) # 6 x 1
-        J_col_i = (numpy.asarray(FK_next) - numpy.asarray(FK_prev)) / 2 * delta_q
+        J_col_i = (FK_next - FK_prev) / (2 * delta_q)
         J[:,i] = J_col_i
     
     return J
@@ -156,11 +160,11 @@ def inverse_kinematics_xyzrpy(x, y, z, roll, pitch, yaw, Ti, Wi, initial_guess):
     q = numpy.asarray(initial_guess)  # Initial guess
     p = forward_kinematics(q = q, Ti = Ti, Wi = Wi)
     e = p - pd
-    e[3:] = (e[3:] + numpy.pi) % (2 * numpy.pi) - numpy.pi
+    e[3:] = ((e[3:] + numpy.pi) % (2 * numpy.pi)) - numpy.pi
     while numpy.linalg.norm(e) > tolerance and iterations < max_iterations:
         J = jacobian(q = q, Ti = Ti, Wi = Wi)
         q = q - numpy.dot(numpy.linalg.pinv(J), e)
-        q = (q + numpy.pi) % (2 * numpy.pi) - numpy.pi
+        q = ((q + numpy.pi) % (2 * numpy.pi)) - numpy.pi
         p = forward_kinematics(q = q, Ti = Ti, Wi = Wi)
         e = p - pd
         e[3:] = (e[3:] + numpy.pi) % (2 * numpy.pi) - numpy.pi
