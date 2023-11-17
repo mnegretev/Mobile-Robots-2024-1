@@ -28,8 +28,9 @@ from geometry_msgs.msg import Twist, PoseStamped, Pose, Point, PointStamped
 from sound_play.msg import SoundRequest
 from vision_msgs.srv import *
 from hri_msgs.msg import *
+from manip_msgs.srv import *
 
-NAME = "FULL NAME"
+NAME = "López Esquivel Andrés"
 
 #
 # Global variable 'speech_recognized' contains the last recognized sentence
@@ -163,6 +164,7 @@ def say(text):
 # and returns the calculated articular position.
 #
 def calculate_inverse_kinematics_left(x,y,z,roll, pitch, yaw):
+    req_ik = InverseKinematicsPose2PoseRequest()
     req_ik.x = x
     req_ik.y = y
     req_ik.z = z
@@ -177,8 +179,8 @@ def calculate_inverse_kinematics_left(x,y,z,roll, pitch, yaw):
 # This function calls the service for calculating inverse kinematics for right arm (practice 08)
 # and returns the calculated articular position.
 #
-def calculate_inverse_kinematics_left(x,y,z,roll, pitch, yaw):
-    req_ik = InverseKinematicsRequest()
+def calculate_inverse_kinematics_right(x,y,z,roll, pitch, yaw):
+    req_ik = InverseKinematicsPose2PoseRequest()
     req_ik.x = x
     req_ik.y = y
     req_ik.z = z
@@ -187,7 +189,7 @@ def calculate_inverse_kinematics_left(x,y,z,roll, pitch, yaw):
     req_ik.yaw   = yaw
     clt = rospy.ServiceProxy("/manipulation/ra_ik_pose", InverseKinematicsPose2Pose)
     resp = clt(req_ik)
-    return [resp.q1, resp.q2, resp.q3, resp.q4, resp.q5, resp.q6, resp.q7]
+    return resp.q
 
 #
 # Calls the service for finding object (practice 08) and returns
@@ -245,10 +247,17 @@ def main():
     current_state = "SM_INIT"
     new_task = False
     while not rospy.is_shutdown():
+
         if current_state == "SM_INIT":
+
             print("Waiting for new task")
             current_state = "SM_WAITING_NEW_TASK"
+
         elif current_state == "SM_WAITING_NEW_TASK":
+            
+            print()
+            print("State: ", current_state)
+
             if new_task:
                 requested_object, requested_location = parse_command(recognized_speech)
                 print("New task received: " + requested_object + " to  " + str(requested_location))
@@ -258,9 +267,128 @@ def main():
                 executing_task = True
                 
         elif current_state == "SM_MOVE_HEAD":
+
+            print()
+            print("State: ", current_state)
             print("Moving head to look at table...")
             move_head(0, -0.9)
             current_state = "SM_FIND_OBJECT"
+
+        elif current_state == "SM_FIND_OBJECT":
+
+            print()
+            print("State: ", current_state)
+            print("Finding object cartesian position using...")
+            x_obj_camera, y_obj_camera, z_obj_camera = find_object(object_name = requested_object)
+            print("Object's position w.r.t. camera's frame: ", x_obj_camera, y_obj_camera, z_obj_camera)
+            current_state = "SM_TRANSFORM_TO_SHOULDER_FRAME"
+
+        elif current_state == "SM_TRANSFORM_TO_SHOULDER_FRAME":
+
+            # Transform the object coordinates from source_frame to target_frame
+
+            print()
+            print("State: ", current_state)
+            source_frame = "realsense_link"
+            target_frame = "shoulders_left_link" if requested_object == "pringles" else "shoulders_right_link"
+            x_obj_shoulder, y_obj_shoulder, z_obj_shoulder =  transform_point(x = x_obj_camera,
+                                                                            y = y_obj_camera,
+                                                                            z = z_obj_camera, 
+                                                                            source_frame = source_frame,
+                                                                            target_frame = target_frame)
+            current_state = "SM_RISE_ARM"
+
+            print("Requested object: ", requested_object)
+            print("Calculating transformation... ")
+            print("source_frame: ", source_frame)
+            print("target_frame: ", target_frame)
+            print("Transformed point: ", x_obj_shoulder, y_obj_shoulder, z_obj_shoulder)
+
+        elif current_state == "SM_RISE_ARM":
+
+            print()
+            print("State: ", current_state)
+
+            if requested_object == "pringles":
+
+                print("Rising left arm to take pringles ...")
+                move_left_arm(q1 = -1.3689,
+                            q2 = 0.2244,
+                            q3 = 0.0579,
+                            q4 = 2.1477,
+                            q5 = 0.0373,
+                            q6 = 0.5376,
+                            q7 = 0.0034)
+
+            else:
+
+                print("Rising right arm to take drink ...")
+                move_right_arm(q1 = -1.2,
+                            q2 = -0.2,
+                            q3 = 0.0,
+                            q4 = 1.6,
+                            q5 = 1.2,
+                            q6 = 0.0,
+                            q7 = 0.0)
+
+            current_state = "SM_IK"
+
+        elif current_state == "SM_IK":
+
+            print()
+            print("State: ", current_state)
+            print("Calculating inverse kinematics...")
+            
+            if requested_object == "pringles":
+
+                q = calculate_inverse_kinematics_left(x = x_obj_shoulder,
+                                                    y = y_obj_shoulder,
+                                                    z = z_obj_shoulder,
+                                                    roll = 0.0,
+                                                    pitch = 0.0,
+                                                    yaw = 0.0)
+            
+            else:
+
+                q = calculate_inverse_kinematics_right(x = x_obj_shoulder,
+                                                    y = y_obj_shoulder,
+                                                    z = z_obj_shoulder,
+                                                    roll = 0.0,
+                                                    pitch = 0.0,
+                                                    yaw = 0.0)
+            
+
+            current_state = "SM_MOVE_ARM_TO_OBJECT"
+
+        elif current_state == "SM_MOVE_ARM_TO_OBJECT":
+
+            print()
+            print("State: ", current_state)
+
+            if requested_object == "pringles":
+
+                print("Moving left arm to take pringles...")
+                move_left_arm(q1 = q[0],
+                            q2 = q[1],
+                            q3 = q[2],
+                            q4 = q[3],
+                            q5 = q[4],
+                            q6 = q[5],
+                            q7 = q[6])
+
+            else:
+
+                print("Moving right arm to take drink...")
+                move_right_arm(q1 = q[0],
+                            q2 = q[1],
+                            q3 = q[2],
+                            q4 = q[3],
+                            q5 = q[4],
+                            q6 = q[5],
+                            q7 = q[6])
+
+            current_state == "SM_RISE_ARM_WHEN_OBJECT_TAKEN"
+
         loop.sleep()
 
 if __name__ == '__main__':
