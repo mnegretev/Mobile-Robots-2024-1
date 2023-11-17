@@ -14,7 +14,7 @@ import numpy
 import rospy
 import rospkg
 
-NAME = "FULL_NAME"
+NAME = "López Esquivel Andrés"
 
 class NeuralNetwork(object):
     def __init__(self, layers, weights=None, biases=None):
@@ -48,7 +48,11 @@ class NeuralNetwork(object):
         # return a list containing the output of each layer, from input to output.
         # Include input x as the first output.
         #
-        y = []
+        y = [x]
+        for i in range(len(self.biases)):
+            z = numpy.dot(self.weights[i], x) + self.biases[i]
+            x = 1.0 / (1.0 + numpy.exp(-z))
+            y.append(x) 
         
         return y
 
@@ -73,7 +77,24 @@ class NeuralNetwork(object):
         #     nabla_b[-l] = delta
         #     nabla_w[-l] = delta*ylpT  where ylpT is the transpose of outputs vector of layer l-1
         #
+
+        # delta for the output layer
+        delta       = (y[-1] - yt) * (y[-1] - y[-1] * y[-1])
+        nabla_b[-1] = delta
+        nabla_w[-1] = numpy.dot(delta, y[-2].transpose())
         
+        # Debugging section
+        # print()
+        # print("delta.shape: ", delta.shape)
+        # print("y[-2].shape: ", y[-2].shape)
+        # print("nabla_w[-1].shape: ", nabla_w[-1].shape)
+        # print("y[-2]: ", y[-2])
+        # print("delta: ", delta)
+
+        for k in range(2, self.num_layers):
+            delta       = numpy.dot(numpy.transpose(self.weights[1 - k]), delta) * (y[-k] - y[-k] * y[-k])
+            nabla_w[-k] = numpy.dot(delta, y[- k - 1].transpose())
+            nabla_b[-k] = delta
         
         return nabla_w, nabla_b
 
@@ -133,11 +154,11 @@ def load_dataset(folder):
     return list(zip(training_dataset, training_labels)), list(zip(testing_dataset, testing_labels))
 
 def main():
-    print("PRACTICE 09 - " + NAME)
+    print("Assignment09 - " + NAME)
     rospy.init_node("practice09")
     rospack = rospkg.RosPack()
     dataset_folder = rospack.get_path("config_files") + "/handwritten_digits/"
-    epochs        = 3
+    epochs        = 50 # 3
     batch_size    = 10
     learning_rate = 3.0
     
