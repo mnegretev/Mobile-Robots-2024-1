@@ -282,11 +282,11 @@ int main(int argc, char** argv)
     tf::TransformBroadcaster broadcaster;
     nav_msgs::GetMap srv_get_map;
 
-    float init_min_x = -1;
-    float init_min_y = -1;
+    float init_min_x = 2; // -1;
+    float init_min_y = 4; // -1;
     float init_min_a = -1;
-    float init_max_x = 2;
-    float init_max_y = 2;
+    float init_max_x = 4.5; // 2;
+    float init_max_y = 7;
     float init_max_a = 1;
     float number_of_particles = 200;
     if(ros::param::has("~n"))
