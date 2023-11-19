@@ -10,6 +10,8 @@
 
 import numpy
 import cv2
+# This is a workaround for ros_numpy using `numpy.float`, which is a deprecated alias for built-in `float`.
+numpy.float = float
 import ros_numpy
 import rospy
 import math
@@ -19,7 +21,7 @@ from geometry_msgs.msg import PointStamped, Point
 from vision_msgs.srv import RecognizeObject, RecognizeObjectResponse
 from vision_msgs.msg import VisionObject
 
-NAME = "FULL_NAME"
+NAME = "ARMANDO UGALDE VELASCO"
 
 def segment_by_color(img_bgr, points, obj_name):
     #
@@ -38,8 +40,36 @@ def segment_by_color(img_bgr, points, obj_name):
     #   Example: 'points[240,320][1]' gets the 'y' value of the point corresponding to
     #   the pixel in the center of the image.
     #
-    
-    return [0,0,0,0,0]
+
+    if obj_name == "pringles":
+        lower = [25, 50, 50]
+        upper = [35, 255, 255]
+    elif obj_name == "drink":
+        lower = [10, 200, 50]
+        upper = [20, 255, 255]
+    else:
+        print("Wrong object name")
+        return
+    lower = numpy.asarray(lower)
+    upper = numpy.asarray(upper)
+
+    img_hsv = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2HSV)
+    pixels_in_range = cv2.inRange(img_hsv, lower, upper)
+    nonzero_pixels = cv2.findNonZero(pixels_in_range)
+    centroid = cv2.mean(nonzero_pixels)
+
+    x, y, z = 0, 0, 0
+    for [[column, row]] in nonzero_pixels:
+        x += points[row, column][0]
+        y += points[row, column][1]
+        z += points[row, column][2]
+
+    n = len(nonzero_pixels)
+    x = x / n
+    y = y / n
+    z = z / n
+
+    return [centroid[0], centroid[1], x, y, z]
 
 def callback_find_object(req):
     global pub_point, img_bgr
