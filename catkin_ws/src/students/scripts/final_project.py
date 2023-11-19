@@ -287,6 +287,10 @@ def take_requested_object(object, x, y, z):
                                               roll = 0.0,
                                               pitch = 0.0,
                                               yaw = 0.0)
+        
+        print("xyz: ", x, y, z)
+        print("q: ", q)
+        """
         move_left_arm(q1 = q[0],
                       q2 = q[1],
                       q3 = q[2],
@@ -294,6 +298,7 @@ def take_requested_object(object, x, y, z):
                       q5 = q[4],
                       q6 = q[5],
                       q7 = q[6])
+        """
     else:
         q = calculate_inverse_kinematics_right(x = x,
                                                y = y,
@@ -301,6 +306,7 @@ def take_requested_object(object, x, y, z):
                                                roll = 0.0,
                                                pitch = 0.0,
                                                yaw = 0.0)
+        """
         move_right_arm(q1 = q[0],
                        q2 = q[1],
                        q3 = q[2],
@@ -308,6 +314,9 @@ def take_requested_object(object, x, y, z):
                        q5 = q[4],
                        q6 = q[5],
                        q7 = q[6])
+        """
+        print("xyz: ", x, y, z)
+        print("q: ", q)
 
 def main():
     global new_task, recognized_speech, executing_task, goal_reached
@@ -398,7 +407,35 @@ def main():
 
         elif current_state == "SM_GO_TO_GOAL":
 
-            pass
+            move_base(linear = -1,
+                      angular = 0.0,
+                      t = 2)
+            
+            rospy.sleep(rate)
+
+            go_to_goal_pose(goal_x = requested_location[0],
+                            goal_y = requested_location[1])
+
+            current_state = "SM_NAVIGATING"
+
+            print("I am moving towards goal.")
+            say("I am moving towards goal")
+
+        elif current_state == "SM_NAVIGATING":
+
+            if goal_reached:
+
+                current_state = "SM_TASK_FINISHED"
+
+                print("I have reached the goal")
+                say("I have reached the goal")
+
+        elif current_state == "SM_TASK_FINISHED":
+
+            current_state = "SM_INIT"
+
+            print(f"Here is the {requested_object}")
+            say(f"Here is the {requested_object}")
         
 
         loop.sleep()
