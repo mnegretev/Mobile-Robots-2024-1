@@ -14,7 +14,7 @@ import numpy
 import rospy
 import rospkg
 
-NAME = "FULL_NAME"
+NAME = "Eduardo Flores Rivas"
 
 class NeuralNetwork(object):
     def __init__(self, layers, weights=None, biases=None):
@@ -48,8 +48,10 @@ class NeuralNetwork(object):
         # return a list containing the output of each layer, from input to output.
         # Include input x as the first output.
         #
-        y = []
-        
+        y = [x]
+        for i in range(len(self.biases)):
+            z = numpy.dot(self.weights[i], y[-1]) + self.biases[i]
+            y.append(1.0 / (1.0 + numpy.exp(-z)))
         return y
 
     def backpropagate(self, x, yt):
@@ -65,17 +67,25 @@ class NeuralNetwork(object):
         # You can calculate the gradient following these steps:
         #
         # Calculate delta for the output layer L: delta=(yL-yt)*yL*(1-yL)
-        # nabla_b of output layer = delta      
-        # nabla_w of output layer = delta*yLpT where yLpT is the transpose of the ouput vector of layer L-1
-        # FOR all layers 'l' from L-1 to input layer: 
+        # nabla_b of the output layer = delta      
+        # nabla_w of the output layer = delta*yLpT where yLpT is the transpose of the output vector of layer L-1
+        # FOR all layers 'l' from L-1 to the input layer: 
         #     delta = (WT * delta)*yl*(1 - yl)
         #     where 'WT' is the transpose of the matrix of weights of layer l+1 and 'yl' is the output of layer l
         #     nabla_b[-l] = delta
-        #     nabla_w[-l] = delta*ylpT  where ylpT is the transpose of outputs vector of layer l-1
+        #     nabla_w[-l] = delta*ylpT  where ylpT is the transpose of the outputs vector of layer l-1
         #
-        
-        
+        delta = (y[-1] - yt) * y[-1] * (1 - y[-1])
+        nabla_b[-1] = delta
+        nabla_w[-1] = numpy.dot(delta, y[-2].transpose())
+
+        for l in range(2, self.num_layers):
+            delta = numpy.dot(self.weights[-l+1].transpose(), delta) * y[-l] * (1 - y[-l])
+            nabla_b[-l] = delta
+            nabla_w[-l] = numpy.dot(delta, y[-l-1].transpose())
+
         return nabla_w, nabla_b
+
 
     def update_with_batch(self, batch, eta):
         #

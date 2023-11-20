@@ -17,12 +17,12 @@ def main(text_to_say):
     msg_speech = SoundRequest()
     msg_speech.sound   = -3
     msg_speech.command = 1
-    msg_speech.volume  = 1.0
+    msg_speech.volume  = 1.5 # Subiendo volumen
     #
     # EJERCICIO
     # Cambie la voz por alguna de las voces instaladas
-    #
-    msg_speech.arg2    = "voice_kal_diphone"
+    # 
+    msg_speech.arg2    = "voice_el_diphone" # Voz en español
     msg_speech.arg = text_to_say
 
     loop.sleep()
