@@ -285,12 +285,12 @@ def take_requested_object(object, x, y, z):
                                               y = y,
                                               z = z,
                                               roll = 0.0,
-                                              pitch = 0.0,
+                                              pitch = - math.pi/2,
                                               yaw = 0.0)
         
         print("xyz: ", x, y, z)
         print("q: ", q)
-        """
+        
         move_left_arm(q1 = q[0],
                       q2 = q[1],
                       q3 = q[2],
@@ -298,15 +298,15 @@ def take_requested_object(object, x, y, z):
                       q5 = q[4],
                       q6 = q[5],
                       q7 = q[6])
-        """
+        
     else:
         q = calculate_inverse_kinematics_right(x = x,
                                                y = y,
                                                z = z,
                                                roll = 0.0,
-                                               pitch = 0.0,
+                                               pitch = -math.pi/2,
                                                yaw = 0.0)
-        """
+        
         move_right_arm(q1 = q[0],
                        q2 = q[1],
                        q3 = q[2],
@@ -314,7 +314,7 @@ def take_requested_object(object, x, y, z):
                        q5 = q[4],
                        q6 = q[5],
                        q7 = q[6])
-        """
+        
         print("xyz: ", x, y, z)
         print("q: ", q)
 
@@ -345,6 +345,7 @@ def main():
     #
     # FINAL PROJECT 
     #
+    goal_reached = False
     executing_task = False
     current_state = "SM_INIT"
     new_task = False
