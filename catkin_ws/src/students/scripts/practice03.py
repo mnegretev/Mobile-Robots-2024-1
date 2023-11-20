@@ -35,7 +35,7 @@ def smooth_path(Q, alpha, beta):
     nabla   = numpy.full(Q.shape, float("inf"))
     epsilon = 0.1                       
     steps   = 0
-
+    #Nuevo codigo a partir de la linea 39
     nabla[0], nabla[-1]=0, 0
 
     while numpy.linalg.norm(nabla) > tol*len (P) and steps < 100000:
