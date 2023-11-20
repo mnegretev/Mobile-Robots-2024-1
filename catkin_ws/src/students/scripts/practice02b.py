@@ -18,7 +18,7 @@ from nav_msgs.msg import Path
 from nav_msgs.srv import *
 from collections import deque
 
-NAME = "FULL NAME"
+NAME = "GUillen Castillo Jorge Luis"
 
 msg_path = Path()
 
