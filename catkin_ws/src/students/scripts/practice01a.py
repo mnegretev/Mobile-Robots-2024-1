@@ -15,7 +15,7 @@ from nav_msgs.srv import GetMap
 from nav_msgs.srv import GetMapResponse
 from nav_msgs.srv import GetMapRequest
 
-NAME = "FULL_NAME"
+NAME = "Guillen Castillo Jorge Luis"
 inflated_map = None
 
 def get_inflated_map(static_map, inflation_cells):
