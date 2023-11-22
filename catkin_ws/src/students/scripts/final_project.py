@@ -238,19 +238,11 @@ def set_actuators_to_zero():
                 q7 = 0.0)
     
 def prepare_robot_to_take_object(object):
-    
-    move_head(pan = 0.0, tilt = -1)
+
+    move_head(pan = 0.0, tilt = 0.0)
 
     if object == "pringles":
-        """
-        move_left_arm(q1 = -1.6,
-                      q2 = 0.2,
-                      q3 = 0.0,
-                      q4 = 1.8,
-                      q5 = 0.0,
-                      q6 = 1.3,
-                      q7 = 0.0)
-        """
+
         move_left_arm(q1 = 0.0730,
                       q2 = 0.2440,
                       q3 = -0.0327,
@@ -259,36 +251,24 @@ def prepare_robot_to_take_object(object):
                       q6 = -0.3717,
                       q7 = 0.0646)
 
-        move_left_gripper(q = 0.3)
-        
+        move_left_gripper(q = 0.4)
+
     else:
-        """
-        move_right_arm(q1 = -1.6,
+
+        move_right_arm(q1 = 0.0,
                        q2 = -0.2,
-                       q3 = 0.0,
-                       q4 = 1.7,
-                       q5 = 1.2,
+                       q3 = 0.1,
+                       q4 = 1.4,
+                       q5 = 0.5,
                        q6 = 0.0,
                        q7 = 0.0)
-        """
-        move_right_arm(q1 = -0.2,
-                       q2 = -0.3,
-                       q3 = 0.0,
-                       q4 = 2.0918,
-                       q5 = 0.4200,
-                       q6 = 0.0105,
-                       q7 = 0.0)
 
-        move_right_gripper(q = 0.3)
+        move_right_gripper(q = 0.5)
 
-        move_base(linear = 0.0,
-                angular = 0.1,
-                t = 0.85)
+        
 
     rospy.sleep(2)
-    move_base(linear = 0.3,
-              angular = 0.0,
-              t = 0.9)
+    
 
 def get_object_coordinates(object):
     target = "shoulders_left_link" if object == "pringles" else "shoulders_right_link"
@@ -327,13 +307,12 @@ def take_requested_object(object, x, y, z):
 
         move_left_gripper(q = -0.4)
 
-        
         rospy.sleep(5)
         
     else:
-        q = calculate_inverse_kinematics_right(x = x,
-                                               y = y,
-                                               z = z,
+        q = calculate_inverse_kinematics_right(x = x + 0.08,
+                                               y = y - 0.02,
+                                               z = z + 0.06,
                                                roll = 0.0,
                                                pitch = - 1.5,
                                                yaw = 0.0)
@@ -345,9 +324,9 @@ def take_requested_object(object, x, y, z):
                        q5 = q[4],
                        q6 = q[5],
                        q7 = q[6])
-        
-        print("xyz: ", x, y, z)
-        print("q: ", q)
+
+        move_right_gripper(q = -0.4)
+
 
 def deliver_object(object):
 
@@ -416,9 +395,39 @@ def main():
         elif current_state == "SM_GET_READY_TO_TAKE_OBJECT":
 
             set_actuators_to_zero()
-            rospy.sleep(rate)
-            prepare_robot_to_take_object(object = requested_object)
-            rospy.sleep(rate)
+            
+            move_head(pan = 0.0, tilt = -1)
+
+            if requested_object == "pringles":
+
+                move_left_arm(q1 = -1.6,
+                              q2 = 0.2,
+                              q3 = 0.0,
+                              q4 = 1.8,
+                              q5 = 0.0,
+                              q6 = 1.3,
+                              q7 = 0.0)
+
+                move_base(linear = 0.3,
+                          angular = 0.0,
+                          t = 0.8)
+            else:
+
+                move_right_arm(q1 = -1.6,
+                               q2 = -0.2,
+                               q3 = 0.0,
+                               q4 = 1.7,
+                               q5 = 1.2,
+                               q6 = 0.0,
+                               q7 = 0.0)
+
+                move_base(linear = 0.3,
+                          angular = 0.0,
+                          t = 0.9)
+
+                move_base(linear = 0.0,
+                          angular = 0.1,
+                          t = 0.95)
 
             print("Ready to take the ", requested_object)
             say(f"Ready to take the {requested_object}")
@@ -428,6 +437,7 @@ def main():
         elif current_state == "SM_GET_OBJECT_COORDINATES":
 
             x, y, z = get_object_coordinates(object = requested_object)
+            
             rospy.sleep(rate)
             
             print("Coordinates of the ", requested_object, " calculated")
@@ -437,10 +447,16 @@ def main():
 
         elif current_state == "SM_TAKE_OBJECT":
 
+            prepare_robot_to_take_object(object = requested_object)
+            
+            rospy.sleep(rate)
+
             take_requested_object(object = requested_object,
                                   x = x,
                                   y = y,
                                   z = z)
+
+            rospy.sleep(rate)
 
             current_state = "SM_GO_TO_GOAL"
 
