@@ -29,7 +29,7 @@ from sound_play.msg import SoundRequest
 from vision_msgs.srv import *
 from hri_msgs.msg import *
 
-NAME = "FULL NAME"
+NAME = "FLORES_RIVAS, MEZA_MARTINEZ, RODRIGUEZ_FUENTES"
 
 #
 # Global variable 'speech_recognized' contains the last recognized sentence
@@ -163,6 +163,7 @@ def say(text):
 # and returns the calculated articular position.
 #
 def calculate_inverse_kinematics_left(x,y,z,roll, pitch, yaw):
+    req_ik = InverseKinematicsRequest()#Puse esto porque tambien esta en el right, puede que me equivoque
     req_ik.x = x
     req_ik.y = y
     req_ik.z = z
@@ -177,7 +178,7 @@ def calculate_inverse_kinematics_left(x,y,z,roll, pitch, yaw):
 # This function calls the service for calculating inverse kinematics for right arm (practice 08)
 # and returns the calculated articular position.
 #
-def calculate_inverse_kinematics_left(x,y,z,roll, pitch, yaw):
+def calculate_inverse_kinematics_right(x,y,z,roll, pitch, yaw):
     req_ik = InverseKinematicsRequest()
     req_ik.x = x
     req_ik.y = y
@@ -214,6 +215,39 @@ def transform_point(x,y,z, source_frame, target_frame):
     obj_p = listener.transformPoint(target_frame, obj_p)
     return [obj_p.point.x, obj_p.point.y, obj_p.point.z]
 
+def location(object):
+    if object=='pringles':
+        target = 'shoulder_left_link'#Creo que asi se llaman, hay que verificar
+    else:
+        target = 'shoulder_right_link'
+    pose = find_object(object)#Coordenadas w.r.t
+    loc = transform_point(pose[0],pose[1],pose[2], "realsense_link", target)#Pasar coordenadas al target
+    x,y,z = loc[0],loc[1],loc[2]
+    return (x,y,z)
+    
+def take_object(object, x, y, z):
+    move_base(0, 0.1, 0.5)#Que se acerque a la mesa un poco
+    if object=='pringles':
+        move_left_arm(0,0,0,0,0,0,0)#Mover a la posicion prepare, hay que ver cuales valores son en tarea 8
+        move_left_arm(0,0,0,0,0,0,0)#Mover cerca del objeto
+        rospy.sleep(2)#Que espere brevemente antes de chocar
+        q = calculate_inverse_kinematics_left(x,y,z,0,0,0)
+        move_left_gripper(q[6])#Da el angulo al gripper, no estoy seguro si con eso lo agarra
+        move_base(0.1,0,0.5)#Retroceder a una posicion segura una vez tomado el objeto
+    else:
+        move_right_arm(0,0,0,0,0,0,0)#Lo mismo de arriba, pero con los valores de right arm
+        move_right arm(0,0,0,0,0,0,0)
+        rospy.sleep(2)
+        q = calculate_inverse_kinematics_right(x,y,z,0,0,0)
+        move_rigth_gripper(q[6])
+        move_base(0.1,0,0.5)
+
+def walking(ubication)#Navegar hasta la requested location
+
+def finish_line(goal_ubication,current_loc):#Alcanzar el objetivo
+    #Saber que llegamos y entregar el objeto
+
+    
 def main():
     global new_task, recognized_speech, executing_task, goal_reached
     global pubLaGoalPose, pubRaGoalPose, pubHdGoalPose, pubLaGoalGrip, pubRaGoalGrip
@@ -261,6 +295,35 @@ def main():
             print("Moving head to look at table...")
             move_head(0, -0.9)
             current_state = "SM_FIND_OBJECT"
+
+        elif current_state == "SM_FIND_OBJECT":
+            s = location(requested_object)#Que encuentre y transforme las coordenadas del objeto, hay que almacenarlas
+            print("Object finded")
+            say("I found the object")
+            current_state = "SM_TAKE_OBJECT"
+            
+        elif current_state == "SM_TAKE_OBJECT":
+            take_object(requested_object, s[0], s[1], s[2])#En s estarian las coordenadas en XYZ
+            print("Object succesfully taken")
+            say("I got the object, thrust me")
+            current_state = "SM_NAVIGATE"
+            
+        elif current_state == "SM_NAVIGATE":
+            walking(requested_location)#Una funcion que navegue a la localizacion deseada
+            print("Navigation in process...")
+            say("I will deliver the desired object")
+            current_state = "SM_GOAL_REACHED"
+            
+        elif current_state == "SM_GOAL_REACHED":
+            finish_line(requested_location,current_location)#Goal_to_goal ayuda a este estado y al anterior, no existe la variable current_location
+            print("Goal succesfully reached")
+            say("I have reached the goal and delivered succesfully")
+            current_state = "SM_RETURN"
+            
+        elif current_state == "SM_RETURN":
+            walking(start)#Guardar la informacion del lugar de partida o regresar al origen, actualmente no existe "start"
+            print("Succesfully base return")
+            say("Safely returned to home")
         loop.sleep()
 
 if __name__ == '__main__':
