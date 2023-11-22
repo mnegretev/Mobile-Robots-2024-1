@@ -242,6 +242,7 @@ def prepare_robot_to_take_object(object):
     move_head(pan = 0.0, tilt = -1)
 
     if object == "pringles":
+        """
         move_left_arm(q1 = -1.6,
                       q2 = 0.2,
                       q3 = 0.0,
@@ -249,9 +250,19 @@ def prepare_robot_to_take_object(object):
                       q5 = 0.0,
                       q6 = 1.3,
                       q7 = 0.0)
+        """
+        move_left_arm(q1 = 0.0730,
+                      q2 = 0.2440,
+                      q3 = -0.0327,
+                      q4 = 2.1538,
+                      q5 = 0.0888,
+                      q6 = -0.3717,
+                      q7 = 0.0646)
+
         move_left_gripper(q = 0.3)
         
     else:
+        """
         move_right_arm(q1 = -1.6,
                        q2 = -0.2,
                        q3 = 0.0,
@@ -259,12 +270,25 @@ def prepare_robot_to_take_object(object):
                        q5 = 1.2,
                        q6 = 0.0,
                        q7 = 0.0)
+        """
+        move_right_arm(q1 = -0.2,
+                       q2 = -0.3,
+                       q3 = 0.0,
+                       q4 = 2.0918,
+                       q5 = 0.4200,
+                       q6 = 0.0105,
+                       q7 = 0.0)
+
         move_right_gripper(q = 0.3)
 
+        move_base(linear = 0.0,
+                angular = 0.1,
+                t = 0.85)
+
     rospy.sleep(2)
-    move_base(linear = 1,
+    move_base(linear = 0.3,
               angular = 0.0,
-              t = 2)
+              t = 0.9)
 
 def get_object_coordinates(object):
     target = "shoulders_left_link" if object == "pringles" else "shoulders_right_link"
@@ -281,11 +305,11 @@ def get_object_coordinates(object):
 def take_requested_object(object, x, y, z):
 
     if object == "pringles":
-        q = calculate_inverse_kinematics_left(x = x,
+        q = calculate_inverse_kinematics_left(x = x + 0.07,
                                               y = y,
-                                              z = z,
+                                              z = z + 0.015,
                                               roll = 0.0,
-                                              pitch = - math.pi/2,
+                                              pitch = - 1.5,
                                               yaw = 0.0)
         
         print("xyz: ", x, y, z)
@@ -298,13 +322,20 @@ def take_requested_object(object, x, y, z):
                       q5 = q[4],
                       q6 = q[5],
                       q7 = q[6])
+
+        rospy.sleep(5)
+
+        move_left_gripper(q = -0.4)
+
+        
+        rospy.sleep(5)
         
     else:
         q = calculate_inverse_kinematics_right(x = x,
                                                y = y,
                                                z = z,
                                                roll = 0.0,
-                                               pitch = -math.pi/2,
+                                               pitch = - 1.5,
                                                yaw = 0.0)
         
         move_right_arm(q1 = q[0],
@@ -317,6 +348,16 @@ def take_requested_object(object, x, y, z):
         
         print("xyz: ", x, y, z)
         print("q: ", q)
+
+def deliver_object(object):
+
+    if object == "pringles":
+
+        move_left_gripper(q = 0.2)
+
+    else:
+
+        move_right_gripper(q = 0.2)
 
 def main():
     global new_task, recognized_speech, executing_task, goal_reached
@@ -425,6 +466,8 @@ def main():
         elif current_state == "SM_NAVIGATING":
 
             if goal_reached:
+
+                deliver_object(object = requested_object)
 
                 current_state = "SM_TASK_FINISHED"
 
