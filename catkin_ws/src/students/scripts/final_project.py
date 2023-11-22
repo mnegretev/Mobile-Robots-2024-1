@@ -285,7 +285,7 @@ def get_object_coordinates(object):
 def take_requested_object(object, x, y, z):
 
     if object == "pringles":
-        q = calculate_inverse_kinematics_left(x = x + 0.07,
+        q = calculate_inverse_kinematics_left(x = x + 0.08,
                                               y = y,
                                               z = z + 0.015,
                                               roll = 0.0,
@@ -305,16 +305,16 @@ def take_requested_object(object, x, y, z):
 
         rospy.sleep(5)
 
-        move_left_gripper(q = -0.4)
+        move_left_gripper(q = -0.2)
 
         rospy.sleep(5)
         
     else:
-        q = calculate_inverse_kinematics_right(x = x + 0.08,
+        q = calculate_inverse_kinematics_right(x = x + 0.11,
                                                y = y - 0.02,
-                                               z = z + 0.06,
+                                               z = z + 0.07,
                                                roll = 0.0,
-                                               pitch = - 1.5,
+                                               pitch = - 1.57,
                                                yaw = 0.0)
         
         move_right_arm(q1 = q[0],
@@ -325,7 +325,7 @@ def take_requested_object(object, x, y, z):
                        q6 = q[5],
                        q7 = q[6])
 
-        move_right_gripper(q = -0.4)
+        move_right_gripper(q = -0.2)
 
 
 def deliver_object(object):
@@ -411,6 +411,11 @@ def main():
                 move_base(linear = 0.3,
                           angular = 0.0,
                           t = 0.8)
+
+                move_base(linear = 0.0,
+                          angular = -0.1,
+                          t = 0.5)
+
             else:
 
                 move_right_arm(q1 = -1.6,
