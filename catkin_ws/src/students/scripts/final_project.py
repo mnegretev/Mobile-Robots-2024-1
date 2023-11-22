@@ -236,6 +236,46 @@ def set_actuators_to_zero():
                 q5 = 0.0,
                 q6 = 0.0,
                 q7 = 0.0)
+
+def move_robot_towards_object(object):
+
+    move_head(pan = 0.0, tilt = -1)
+
+    if object == "pringles":
+
+        move_left_arm(q1 = -1.6,
+                      q2 = 0.2,
+                      q3 = 0.0,
+                      q4 = 1.8,
+                      q5 = 0.0,
+                      q6 = 1.3,
+                      q7 = 0.0)
+
+        move_base(linear = 0.3,
+                  angular = 0.0,
+                  t = 0.8)
+
+        move_base(linear = 0.0,
+                  angular = -0.1,
+                  t = 0.5)
+
+    else:
+
+        move_right_arm(q1 = -1.6,
+                       q2 = -0.2,
+                       q3 = 0.0,
+                       q4 = 1.7,
+                       q5 = 1.2,
+                       q6 = 0.0,
+                       q7 = 0.0)
+
+        move_base(linear = 0.3,
+                  angular = 0.0,
+                  t = 0.9)
+
+        move_base(linear = 0.0,
+                  angular = 0.1,
+                  t = 0.95)
     
 def prepare_robot_to_take_object(object):
 
@@ -264,13 +304,10 @@ def prepare_robot_to_take_object(object):
                        q7 = 0.0)
 
         move_right_gripper(q = 0.5)
-
-        
-
-    rospy.sleep(2)
     
 
 def get_object_coordinates(object):
+
     target = "shoulders_left_link" if object == "pringles" else "shoulders_right_link"
     x1, y1, z1 = find_object(object_name = object)
     x0, y0, z0 = transform_point(x = x1,
@@ -278,13 +315,25 @@ def get_object_coordinates(object):
                                  z = z1,
                                  source_frame = "realsense_link",
                                  target_frame = target)
-    print("Coordinates w.r.t. realsense_link: ", x1, y1, z1)
-    print("Coordingates w.r.t ", target, ": ", x0, y0, z0)
+    
+    print()
+    print("Coordinates w.r.t. realsense_link: ")
+    print("x: ", x1)
+    print("y: ", y1)
+    print("z: ", z1)
+
+    print()
+    print("Coordingates w.r.t ", target, ": ")
+    print("x: ", x0)
+    print("y: ", y0)
+    print("z: ", z0)
+
     return (x0, y0, z0)
 
 def take_requested_object(object, x, y, z):
 
     if object == "pringles":
+
         q = calculate_inverse_kinematics_left(x = x + 0.08,
                                               y = y,
                                               z = z + 0.015,
@@ -303,18 +352,16 @@ def take_requested_object(object, x, y, z):
                       q6 = q[5],
                       q7 = q[6])
 
-        rospy.sleep(5)
+        move_left_gripper(q = -0.1)
 
-        move_left_gripper(q = -0.2)
-
-        rospy.sleep(5)
         
     else:
-        q = calculate_inverse_kinematics_right(x = x + 0.11,
+
+        q = calculate_inverse_kinematics_right(x = x + 0.12,
                                                y = y - 0.02,
-                                               z = z + 0.07,
+                                               z = z + 0.09,
                                                roll = 0.0,
-                                               pitch = - 1.57,
+                                               pitch = - 1.7,
                                                yaw = 0.0)
         
         move_right_arm(q1 = q[0],
@@ -337,6 +384,13 @@ def deliver_object(object):
     else:
 
         move_right_gripper(q = 0.2)
+
+def print_and_say(text):
+
+    print()
+    print(text)
+    say(text)
+    rospy.sleep(3)
 
 def main():
     global new_task, recognized_speech, executing_task, goal_reached
@@ -372,8 +426,8 @@ def main():
     rate = 5 # 5 [Hz] -> 0.2 [s]
     while not rospy.is_shutdown():
 
-        print()
-        print("Current state: ", current_state)
+        # print()
+        # print("Current state: ", current_state)
 
         if current_state == "SM_INIT":
 
@@ -382,127 +436,129 @@ def main():
 
         elif current_state == "SM_WAITING_NEW_TASK":
 
+            print()
+            print("=" * 50)
+            print(f"Current state: {current_state}")
+            print("=" * 50)
+
             if new_task:
 
                 requested_object, requested_location = parse_command(recognized_speech)
                 new_task = False
                 executing_task = True
-                current_state = "SM_GET_READY_TO_TAKE_OBJECT"
+                current_state = "SM_MOVE_TOWARDS_OBJECT"
 
                 print("New task received: " + requested_object + " to  " + str(requested_location))
                 say("Executing the command, " + recognized_speech)
+
+                rospy.sleep(5)
                 
-        elif current_state == "SM_GET_READY_TO_TAKE_OBJECT":
+        elif current_state == "SM_MOVE_TOWARDS_OBJECT":
+
+            print()
+            print("=" * 50)
+            print(f"Current state: {current_state}")
+            print("=" * 50)
+
+            print_and_say(text = "Actuators will be set to zero")
 
             set_actuators_to_zero()
             
-            move_head(pan = 0.0, tilt = -1)
+            print_and_say(text = "Actuators have been set to zero")
 
-            if requested_object == "pringles":
+            print_and_say(text = "Now, I am moving towards object")
 
-                move_left_arm(q1 = -1.6,
-                              q2 = 0.2,
-                              q3 = 0.0,
-                              q4 = 1.8,
-                              q5 = 0.0,
-                              q6 = 1.3,
-                              q7 = 0.0)
+            move_robot_towards_object(object = requested_object)
 
-                move_base(linear = 0.3,
-                          angular = 0.0,
-                          t = 0.8)
-
-                move_base(linear = 0.0,
-                          angular = -0.1,
-                          t = 0.5)
-
-            else:
-
-                move_right_arm(q1 = -1.6,
-                               q2 = -0.2,
-                               q3 = 0.0,
-                               q4 = 1.7,
-                               q5 = 1.2,
-                               q6 = 0.0,
-                               q7 = 0.0)
-
-                move_base(linear = 0.3,
-                          angular = 0.0,
-                          t = 0.9)
-
-                move_base(linear = 0.0,
-                          angular = 0.1,
-                          t = 0.95)
-
-            print("Ready to take the ", requested_object)
-            say(f"Ready to take the {requested_object}")
+            print_and_say(text = "I am close enough to take the object")
 
             current_state = "SM_GET_OBJECT_COORDINATES"
 
         elif current_state == "SM_GET_OBJECT_COORDINATES":
 
+            print()
+            print("=" * 50)
+            print(f"Current state: {current_state}")
+            print("=" * 50)
+
+            print_and_say(text = "I am getting the object coordinates")
+
             x, y, z = get_object_coordinates(object = requested_object)
             
-            rospy.sleep(rate)
-            
-            print("Coordinates of the ", requested_object, " calculated")
-            say(f"Coordinates of the {requested_object} calculated")
+            print_and_say(text = "Object coordinates calculated")
 
             current_state = "SM_TAKE_OBJECT"
 
         elif current_state == "SM_TAKE_OBJECT":
 
+            print()
+            print("=" * 50)
+            print(f"Current state: {current_state}")
+            print("=" * 50)
+
+            print_and_say(text = "I will prepare my arm to take the object")
+
             prepare_robot_to_take_object(object = requested_object)
             
-            rospy.sleep(rate)
+            print_and_say(text = "Ready to take the object")
 
             take_requested_object(object = requested_object,
                                   x = x,
                                   y = y,
                                   z = z)
 
-            rospy.sleep(rate)
+            print_and_say(text = "I took the object")
 
             current_state = "SM_GO_TO_GOAL"
 
-            print("The requested object was taken")
-            say("The requested object was taken")
-
         elif current_state == "SM_GO_TO_GOAL":
+
+            print()
+            print("=" * 50)
+            print(f"Current state: {current_state}")
+            print("=" * 50)
+
+            print_and_say(text = "I will walk away from the table")
 
             move_base(linear = -1,
                       angular = 0.0,
                       t = 2)
             
-            rospy.sleep(rate)
+            print_and_say(text = "I will start navigating to the destination")
 
             go_to_goal_pose(goal_x = requested_location[0],
                             goal_y = requested_location[1])
 
             current_state = "SM_NAVIGATING"
 
-            print("I am moving towards goal.")
-            say("I am moving towards goal")
-
         elif current_state == "SM_NAVIGATING":
 
+            print()
+            print("=" * 50)
+            print(f"Current state: {current_state}")
+            print("=" * 50)
+
             if goal_reached:
+
+                print_and_say(text = "I have reached the goal")
+
+                print_and_say(text = "Here is the object")
 
                 deliver_object(object = requested_object)
 
                 current_state = "SM_TASK_FINISHED"
 
-                print("I have reached the goal")
-                say("I have reached the goal")
-
         elif current_state == "SM_TASK_FINISHED":
+
+            print()
+            print("=" * 50)
+            print(f"Current state: {current_state}")
+            print("=" * 50)
 
             current_state = "SM_INIT"
 
-            print(f"Here is the {requested_object}")
-            say(f"Here is the {requested_object}")
+            print_and_say("It was nice to work with you. Bye")
         
-
         loop.sleep()
 
 if __name__ == '__main__':
