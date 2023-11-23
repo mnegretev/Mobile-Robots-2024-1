@@ -19,7 +19,7 @@ from geometry_msgs.msg import PointStamped, Point
 from vision_msgs.srv import RecognizeObject, RecognizeObjectResponse
 from vision_msgs.msg import VisionObject
 
-NAME = "FULL_NAME"
+NAME = "Brandon Meza Martínez"
 
 def segment_by_color(img_bgr, points, obj_name):
     #
@@ -38,8 +38,36 @@ def segment_by_color(img_bgr, points, obj_name):
     #   Example: 'points[240,320][1]' gets the 'y' value of the point corresponding to
     #   the pixel in the center of the image.
     #
-    
-    return [0,0,0,0,0]
+    if obj_name == 'pringles':
+        lower_limit = numpy.array([25, 50, 50])
+        upper_limit = numpy.array([35, 255, 255])
+    else:
+        lower_limit = numpy.array([10, 200, 50])
+        upper_limit = numpy.array([20, 255, 255])
+
+    # Change color space from RGB to HSV
+    img_hsv = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2HSV)
+
+    # Determine the pixels whose color is in the selected color range
+    mask = cv2.inRange(img_hsv, lower_limit, upper_limit)
+
+    # Find the indices of the pixels that belong to the color range
+    indices = cv2.findNonZero(mask)
+
+    # Calculate the centroid of all pixels in the given color range (ball position)
+    if indices is not None:
+        centroid = cv2.mean(indices)
+        center_row, center_col = int(centroid[0]), int(centroid[1])
+
+        # Calculate the centroid of the segmented region in the cartesian space
+        # using the point cloud 'points'
+        x = points[center_row, center_col][0]
+        y = points[center_row, center_col][1]
+        z = points[center_row, center_col][2]
+
+        return [center_row, center_col, x, y, z]
+    else:
+        return [0,0,0,0,0]
 
 def callback_find_object(req):
     global pub_point, img_bgr
