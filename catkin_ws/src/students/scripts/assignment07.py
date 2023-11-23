@@ -19,9 +19,10 @@ from geometry_msgs.msg import PointStamped, Point
 from vision_msgs.srv import RecognizeObject, RecognizeObjectResponse
 from vision_msgs.msg import VisionObject
 
-NAME = "FULL_NAME"
+NAME = "González Chávez Cesar de Jesús"
 
 def segment_by_color(img_bgr, points, obj_name):
+    # global bin_img
     #
     # TODO:
     # - Assign lower and upper color limits according to the requested object:
@@ -38,8 +39,21 @@ def segment_by_color(img_bgr, points, obj_name):
     #   Example: 'points[240,320][1]' gets the 'y' value of the point corresponding to
     #   the pixel in the center of the image.
     #
+
+    hsv_lower_limit = numpy.array([25, 50, 50]) if obj_name == "pringles" else numpy.array([10, 200, 50])
+    hsv_upper_limit = numpy.array([35, 255, 255]) if obj_name == "pringles" else numpy.array([20, 255, 255])
+    hsv_img = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2HSV)
+    bin_img = cv2.inRange(hsv_img, hsv_lower_limit, hsv_upper_limit)
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT,(5,5))
+    bin_img = cv2.morphologyEx(bin_img, cv2.MORPH_OPEN, kernel)
+    nonzero_elements = cv2.findNonZero(bin_img)
+    centroid_px = cv2.mean(nonzero_elements)
+    px_x, px_y = int(centroid_px[0]), int(centroid_px[1])
+    x = points[px_y, px_x][0]
+    y = points[px_y, px_x][1]
+    z = points[px_y, px_x][2]
     
-    return [0,0,0,0,0]
+    return [px_x,px_y,x,y,z]
 
 def callback_find_object(req):
     global pub_point, img_bgr
@@ -60,12 +74,13 @@ def callback_find_object(req):
     return resp
 
 def main():
-    global pub_point, img_bgr
+    global pub_point, img_bgr#, bin_img
     print("ASSIGNMENT 07 - " + NAME)
     rospy.init_node("color_segmentation")
     rospy.Service("/vision/obj_reco/recognize_object", RecognizeObject, callback_find_object)
     pub_point = rospy.Publisher('/detected_object', PointStamped, queue_size=10)
     img_bgr = numpy.zeros((480, 640, 3), numpy.uint8)
+    bin_img = numpy.zeros((480, 640, 3), numpy.uint8)
     loop = rospy.Rate(10)
     while not rospy.is_shutdown():
         cv2.imshow("Color Segmentation", img_bgr)
