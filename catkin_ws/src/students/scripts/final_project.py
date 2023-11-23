@@ -217,7 +217,7 @@ def transform_point(x,y,z, source_frame, target_frame):
 
 def location(object):
     if object=='pringles':
-        target = 'shoulder_left_link'#Creo que asi se llaman, hay que verificar
+        target = 'shoulder_left_link'
     else:
         target = 'shoulder_right_link'
     pose = find_object(object)#Coordenadas w.r.t
@@ -227,19 +227,19 @@ def location(object):
     
 def take_object(object, x, y, z):
     move_base(0, 0.1, 0.5)#Que se acerque a la mesa un poco
-    if object=='pringles':
-        move_left_arm(0,0,0,0,0,0,0)#Mover a la posicion prepare, hay que ver cuales valores son en tarea 8
-        move_left_arm(0,0,0,0,0,0,0)#Mover cerca del objeto
+      if object=='pringles':
+        move_left_arm(-1.2,0.2,0.0,1.6,0.0,1.1,0.0)#Mover a la posicion prepare, es diferente en left y right arm
+        q = calculate_inverse_kinematics_left(x+0.02,y,z+0.05,0,-1.3,0)#5 cm alejado del centroide, pitch para que alcance
+        move_left_arm(q[0],q[1],q[2],q[3],q[4],q[5],q[6])#Mover cerca del objeto
         rospy.sleep(2)#Que espere brevemente antes de chocar
-        q = calculate_inverse_kinematics_left(x,y,z,0,0,0)
-        move_left_gripper(q[6])#Da el angulo al gripper, no estoy seguro si con eso lo agarra
+        move_left_gripper(-0.1)#Creo que con este valor ya alcanza a agarrar cualquier objeto
         move_base(0.1,0,0.5)#Retroceder a una posicion segura una vez tomado el objeto
     else:
-        move_right_arm(0,0,0,0,0,0,0)#Lo mismo de arriba, pero con los valores de right arm
-        move_right arm(0,0,0,0,0,0,0)
+        move_right_arm(-1.2,-0.2,0.0,1.6,1.2,0.0,0.0)#Lo mismo de arriba, pero con los valores de right arm
+        q = calculate_inverse_kinematics_right(x+0.05,y,z+0.05,0,-1.3,0)
+        move_right_arm(q[0],q[1],q[2],q[3],q[4],q[5],q[6])
         rospy.sleep(2)
-        q = calculate_inverse_kinematics_right(x,y,z,0,0,0)
-        move_rigth_gripper(q[6])
+        move_rigth_gripper(-0.1)
         move_base(0.1,0,0.5)
 
 def walking(ubication)#Navegar hasta la requested location
@@ -312,12 +312,15 @@ def main():
             walking(requested_location)#Una funcion que navegue a la localizacion deseada
             print("Navigation in process...")
             say("I will deliver the desired object")
-            current_state = "SM_GOAL_REACHED"
+            if goal_reached:#Hay que pensar que condicion con el goal_to_goal
+                current_state = "SM_GOAL_REACHED"
+            else:
+                current_state = "SM_NAVIGATE"#QUe siga navegando en lo que alcanza el objetivo
             
         elif current_state == "SM_GOAL_REACHED":
             finish_line(requested_location,current_location)#Goal_to_goal ayuda a este estado y al anterior, no existe la variable current_location
-            print("Goal succesfully reached")
-            say("I have reached the goal and delivered succesfully")
+            callback_goal_reached(msg)
+            say("I have reached the goal")
             current_state = "SM_RETURN"
             
         elif current_state == "SM_RETURN":
