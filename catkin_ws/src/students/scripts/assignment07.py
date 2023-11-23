@@ -22,7 +22,7 @@ from vision_msgs.msg import VisionObject
 NAME = "Andres Garcia Diego"
 
 def segment_by_color(img_bgr, points, obj_name):
-    # global bin_img
+    global bin_img
     #
     # TODO:
     # - Assign lower and upper color limits according to the requested object:
@@ -52,6 +52,13 @@ def segment_by_color(img_bgr, points, obj_name):
     bin_img = cv2.morphologyEx(bin_img, cv2.MORPH_OPEN, kernel)
     # Determine the centroid (in pixels) of the detected object
     nonzero_elements = cv2.findNonZero(bin_img)
+
+    cv2.bitwise_and(img_bgr, img_bgr, mask=nonzero_elements)
+
+    #cv2.imshow("Color Segmentation", img_bgr)
+    #cv2.waitKey(0)
+
+
     centroid_px = cv2.mean(nonzero_elements)
     px_x, px_y = int(centroid_px[0]), int(centroid_px[1])
     # Calculate the centroid of the segmented region in the cartesian space   
@@ -62,12 +69,16 @@ def segment_by_color(img_bgr, points, obj_name):
 
 def callback_find_object(req):
     global pub_point, img_bgr
+
+    print("+++++++++++++++++++++++++++++++++")
     print("Trying to find object: " + req.name)
     arr = ros_numpy.point_cloud2.pointcloud2_to_array(req.point_cloud)
     rgb_arr = arr['rgb'].copy()
     rgb_arr.dtype = numpy.uint32
     r,g,b = ((rgb_arr >> 16) & 255), ((rgb_arr >> 8) & 255), (rgb_arr & 255)
     img_bgr = cv2.merge((numpy.asarray(b,dtype='uint8'),numpy.asarray(g,dtype='uint8'),numpy.asarray(r,dtype='uint8')))
+    print("*****************")
+
     [r, c, x, y, z] = segment_by_color(img_bgr, arr, req.name)
     hdr = Header(frame_id='realsense_link', stamp=rospy.Time.now())
     pub_point.publish(PointStamped(header=hdr, point=Point(x=x, y=y, z=z)))
@@ -88,9 +99,10 @@ def main():
     bin_img = numpy.zeros((480, 640, 3), numpy.uint8)
     loop = rospy.Rate(10)
     while not rospy.is_shutdown():
-        cv2.imshow("Color Segmentation", img_bgr)
+
+        #cv2.imshow("Color Segmentation", img_bgr)
         # cv2.imshow('bin_img', bin_img)
-        cv2.waitKey(1)
+        #cv2.waitKey(1)
         loop.sleep()
     
 if __name__ == '__main__':
