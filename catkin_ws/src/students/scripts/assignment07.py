@@ -19,7 +19,7 @@ from geometry_msgs.msg import PointStamped, Point
 from vision_msgs.srv import RecognizeObject, RecognizeObjectResponse
 from vision_msgs.msg import VisionObject
 
-NAME = "FULL_NAME"
+NAME = "ROLDAN LANDA MEIR JOSHUA"
 
 def segment_by_color(img_bgr, points, obj_name):
     #
@@ -38,7 +38,23 @@ def segment_by_color(img_bgr, points, obj_name):
     #   Example: 'points[240,320][1]' gets the 'y' value of the point corresponding to
     #   the pixel in the center of the image.
     #
-    
+    if obj_name == 'pringles':
+        lower_lim = numpy.array([25, 50, 50])
+        upper_lim = numpy.array([35, 255, 255])
+    else:
+        lower_lim = numpy.array([10, 200, 50])
+        upper_lim = numpy.array([20, 255, 255])
+    img_hsv = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2HSV)
+    pix = cv2.inRange(img_hsv, lower_lim, upper_lim)
+    indexi = cv2.findNonZero(pix)
+    if indexi is not None:
+        centroid = cv2.mean(indexi)
+        center_row, center_col = int(centroid[0]), int(centroid[1])
+        x = points[center_row, center_col][0]
+        y = points[center_row, center_col][1]
+        z = points[center_row, center_col][2]
+        return [center_row, center_col, x, y, z]
+    else:
     return [0,0,0,0,0]
 
 def callback_find_object(req):
