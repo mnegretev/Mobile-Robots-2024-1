@@ -19,27 +19,47 @@ from geometry_msgs.msg import PointStamped, Point
 from vision_msgs.srv import RecognizeObject, RecognizeObjectResponse
 from vision_msgs.msg import VisionObject
 
-NAME = "FULL_NAME"
+NAME = "Romero Trujillo Jerson Gerardo"
+
+# Límites de color para "pringles"
+H_MIN_PRINGLES, S_MIN_PRINGLES, V_MIN_PRINGLES = 25, 50, 50
+H_MAX_PRINGLES, S_MAX_PRINGLES, V_MAX_PRINGLES = 35, 255, 255
+
+# Límites de color para "drink"
+H_MIN_DRINK, S_MIN_DRINK, V_MIN_DRINK = 10, 200, 50
+H_MAX_DRINK, S_MAX_DRINK, V_MAX_DRINK = 20, 255, 255
 
 def segment_by_color(img_bgr, points, obj_name):
-    #
-    # TODO:
-    # - Assign lower and upper color limits according to the requested object:
-    #   If obj_name == 'pringles': [25, 50, 50] - [35, 255, 255]
-    #   otherwise                : [10,200, 50] - [20, 255, 255]
-    # - Change color space from RGB to HSV.
-    #   Check online documentation for cv2.cvtColor function
-    # - Determine the pixels whose color is in the selected color range.
-    #   Check online documentation for cv2.inRange
-    # - Calculate the centroid of all pixels in the given color range (ball position).
-    #   Check online documentation for cv2.findNonZero and cv2.mean
-    # - Calculate the centroid of the segmented region in the cartesian space
-    #   using the point cloud 'points'. Use numpy array notation to process the point cloud data.
-    #   Example: 'points[240,320][1]' gets the 'y' value of the point corresponding to
-    #   the pixel in the center of the image.
-    #
-    
-    return [0,0,0,0,0]
+    # Límites de color según el objeto solicitado
+    if obj_name == 'pringles':
+        lower_color_limit = numpy.array([H_MIN_PRINGLES, S_MIN_PRINGLES, V_MIN_PRINGLES])
+        upper_color_limit = numpy.array([H_MAX_PRINGLES, S_MAX_PRINGLES, V_MAX_PRINGLES])
+    elif obj_name == 'drink':
+        lower_color_limit = numpy.array([H_MIN_DRINK, S_MIN_DRINK, V_MIN_DRINK])
+        upper_color_limit = numpy.array([H_MAX_DRINK, S_MAX_DRINK, V_MAX_DRINK])
+    else:
+        # Límites de color predeterminados
+        lower_color_limit = numpy.array([20, 100, 100])
+        upper_color_limit = numpy.array([30, 255, 255])
+
+    # Transformar la imagen del espacio BGR al espacio HSV
+    img_hsv = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2HSV)
+
+    # Determinar los píxeles de la imagen que pertenecen al rango de color elegido
+    mask = cv2.inRange(img_hsv, lower_color_limit, upper_color_limit)
+
+    # Encontrar los índices de los píxeles que pertenecen al rango de color
+    nonzero = cv2.findNonZero(mask)
+
+    if nonzero is not None:
+        # Utilizando los índices y la nube de puntos, determinar el centroide del objeto
+        mean_val = cv2.mean(nonzero)
+        r, c = int(mean_val[1]), int(mean_val[0])
+        x, y, z = points[r, c]
+
+        return [r, c, x, y, z]
+
+    return [0, 0, 0, 0, 0]
 
 def callback_find_object(req):
     global pub_point, img_bgr
@@ -47,8 +67,8 @@ def callback_find_object(req):
     arr = ros_numpy.point_cloud2.pointcloud2_to_array(req.point_cloud)
     rgb_arr = arr['rgb'].copy()
     rgb_arr.dtype = numpy.uint32
-    r,g,b = ((rgb_arr >> 16) & 255), ((rgb_arr >> 8) & 255), (rgb_arr & 255)
-    img_bgr = cv2.merge((numpy.asarray(b,dtype='uint8'),numpy.asarray(g,dtype='uint8'),numpy.asarray(r,dtype='uint8')))
+    r, g, b = ((rgb_arr >> 16) & 255), ((rgb_arr >> 8) & 255), (rgb_arr & 255)
+    img_bgr = cv2.merge((numpy.asarray(b, dtype='uint8'), numpy.asarray(g, dtype='uint8'), numpy.asarray(r, dtype='uint8')))
     [r, c, x, y, z] = segment_by_color(img_bgr, arr, req.name)
     hdr = Header(frame_id='realsense_link', stamp=rospy.Time.now())
     pub_point.publish(PointStamped(header=hdr, point=Point(x=x, y=y, z=z)))
@@ -69,9 +89,11 @@ def main():
     loop = rospy.Rate(10)
     while not rospy.is_shutdown():
         cv2.imshow("Color Segmentation", img_bgr)
-        cv2.waitKey(1)
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
         loop.sleep()
-    
+
+    cv2.destroyAllWindows()
+
 if __name__ == '__main__':
     main()
-    
