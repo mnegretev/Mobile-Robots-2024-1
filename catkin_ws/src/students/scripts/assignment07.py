@@ -53,11 +53,9 @@ def segment_by_color(img_bgr, points, obj_name):
     # Determine the centroid (in pixels) of the detected object
     nonzero_elements = cv2.findNonZero(bin_img)
 
-    cv2.bitwise_and(img_bgr, img_bgr, mask=nonzero_elements)
-
+    #cv2.bitwise_and(img_bgr, img_bgr, mask=nonzero_elements)
     #cv2.imshow("Color Segmentation", img_bgr)
     #cv2.waitKey(0)
-
 
     centroid_px = cv2.mean(nonzero_elements)
     px_x, px_y = int(centroid_px[0]), int(centroid_px[1])
@@ -65,6 +63,7 @@ def segment_by_color(img_bgr, points, obj_name):
     x = points[px_y, px_x][0]
     y = points[px_y, px_x][1]
     z = points[px_y, px_x][2]
+
     return [px_x,px_y,x,y,z]
 
 def callback_find_object(req):
@@ -100,9 +99,9 @@ def main():
     loop = rospy.Rate(10)
     while not rospy.is_shutdown():
 
-        #cv2.imshow("Color Segmentation", img_bgr)
+        cv2.imshow("Color Segmentation", img_bgr)
         # cv2.imshow('bin_img', bin_img)
-        #cv2.waitKey(1)
+        cv2.waitKey(1)
         loop.sleep()
     
 if __name__ == '__main__':
