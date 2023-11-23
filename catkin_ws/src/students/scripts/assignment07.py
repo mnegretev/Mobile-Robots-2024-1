@@ -43,20 +43,18 @@ def segment_by_color(img_bgr, points, obj_name):
     hsv_upper_limit = numpy.array([35, 255, 255]) if obj_name == "pringles" else numpy.array([20, 255, 255])
     
     hsv_img = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2HSV)
-    
     bin_img = cv2.inRange(hsv_img, hsv_lower_limit, hsv_upper_limit)
     kernel = cv2.getStructuringElement(cv2.MORPH_RECT,(5,5))
     bin_img = cv2.morphologyEx(bin_img, cv2.MORPH_OPEN, kernel)
     
     nonzero_elements = cv2.findNonZero(bin_img)
     centroid_px = cv2.mean(nonzero_elements)
-    px_x, px_y = int(centroid_px[0]), int(centroid_px[1])
-     
+    px_x, px_y = int(centroid_px[0]), int(centroid_px[1])     
     x = points[px_y, px_x][0]
     y = points[px_y, px_x][1]
     z = points[px_y, px_x][2]
     
-    return [0,0,0,0,0]
+    return [px_x,px_y,x,y,z]
 
 def callback_find_object(req):
     global pub_point, img_bgr
