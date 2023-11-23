@@ -94,7 +94,7 @@ std::vector<float> calculate_particle_similarities(std::vector<sensor_msgs::Lase
      */
     std::vector<float> deltas(simulated_scans.size(), 0);
     float sum_similarities = 0;
-    for(int j=0; j < particles.poses.size(); j++){
+    for(int j=0; j < simulated_scans.size(); j++){
     	for(int i=0; i < simulated_scans[i].ranges.size(); i++){
     		if(simulated_scans[j].ranges[i] < real_scan.range_max 
     		&&
