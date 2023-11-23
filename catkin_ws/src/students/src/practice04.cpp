@@ -98,31 +98,23 @@ std::vector<float> calculate_particle_similarities(std::vector<sensor_msgs::Lase
      */
     std::vector<float> deltas(simulated_scans.size(), 0);
     float sum_similarities = 0;
-    for(int j = 0; j < simulated_scans.size(); j++)
+    for(int j=0; j < simulated_scans.size(); j++)
     {
-        for(int i = 0; i < simulated_scans[j].ranges.size(); i++)
+        for(int i=0; i < simulated_scans[j].ranges.size(); i++)
         {
-            if(simulated_scans[j].ranges[i] < real_scan.range_max
-            && real_scan.ranges[i * LASER_DOWNSAMPLING < real_scan.range_max])
-            {
-                deltas[j] += fabs(simulated_scans[j].ranges[i] - real_scan.ranges[i * LASER_DOWNSAMPLING]);
-            }
+            if(simulated_scans[j].ranges[i] < real_scan.range_max && real_scan.ranges[i*LASER_DOWNSAMPLING] < real_scan.range_max)
+                deltas[j] += fabs(simulated_scans[j].ranges[i] - real_scan.ranges[i*LASER_DOWNSAMPLING]);
             else
-            {
                 deltas[j] += real_scan.range_max;
-            }
         }
-
         deltas[j] /= simulated_scans[j].ranges.size();
-        similarities[j] = exp(- deltas[j] * deltas[j] / SENSOR_NOISE);
+        similarities[j] = exp(-deltas[j]*deltas[j]/SENSOR_NOISE);
         sum_similarities += similarities[j];
     }
-
-    for(int j = 0; j < similarities.size(); j++)
+    for(int i=0; i < similarities.size(); i++)
     {
-        similarities[j] /= sum_similarities;
+        similarities[i] /= sum_similarities;
     }
-    
     return similarities;
 }
 
@@ -138,12 +130,12 @@ int random_choice(std::vector<float>& similarities)
      * Return the chosen integer. 
      */
     float beta = rnd.uniformReal(0,1);
-    for(int i = 0; i < similarities.size(); i++)
+    for(int i=0; i<similarities.size(); i++)
     {
-        if(beta < similarities[i])
-            return i;
-        else
-            beta -= similarities[i];
+    if(beta < similarities[i])
+        return i;
+    else
+        beta -= similarities[i];
     }
     return -1;
 }
@@ -167,7 +159,8 @@ geometry_msgs::PoseArray resample_particles(geometry_msgs::PoseArray& particles,
      * given by the quaternion (0,0,sin(theta/2), cos(theta/2)), thus, you should first
      * get the corresponding angle, then add noise, and the get again the corresponding quaternion.
      */
-    for(size_t i = 0; i < particles.poses.size(); i++)
+    
+    for(size_t i=0; i<particles.poses.size(); i++)
     {
         int idx = random_choice(similarities);
         resampled_particles.poses[i].position.x = particles.poses[idx].position.x + rnd.gaussian(0, RESAMPLING_NOISE);
@@ -192,15 +185,15 @@ void move_particles(geometry_msgs::PoseArray& particles, float delta_x, float de
      * is the orientation of the i-th particle.
      * Add gaussian noise to each new position. Use MOVEMENT_NOISE as covariances. 
      */
-    for(size_t i = 0; i < particles.poses.size(); i++)
+    for(size_t i=0; i<particles.poses.size(); i++)
     {
-        float a = atan2(particles.poses[i].orientation.z, particles.poses[i].orientation.w) * 2;
-        particles.poses[i].position.x += delta_x * cos(a) - delta_y * sin(a) + rnd.gaussian(0, MOVEMENT_NOISE);
-        particles.poses[i].position.y += delta_x * sin(a) + delta_y * cos(a) + rnd.gaussian(0, MOVEMENT_NOISE);
-        a += delta_t;
-        particles.poses[i].orientation.w = cos(a/2);
-        particles.poses[i].orientation.z = sin(a/2);
-    }
+    	float a = atan2(particles.poses[i].orientation.z, particles.poses[i].orientation.w)*2;
+    	particles.poses[i].position.x += delta_x*cos(a) - delta_y*sin(a) + rnd.gaussian(0, MOVEMENT_NOISE);
+    	particles.poses[i].position.y += delta_x*sin(a) + delta_y*cos(a) + rnd.gaussian(0, MOVEMENT_NOISE);
+    	a += delta_t + rnd.gaussian(0, MOVEMENT_NOISE);
+    	particles.poses[i].orientation.w = cos(a/2);
+    	particles.poses[i].orientation.z = sin(a/2);
+    } 
 }
 
 bool check_displacement(geometry_msgs::Pose2D& robot_pose, geometry_msgs::Pose2D& delta_pose)
@@ -282,13 +275,13 @@ int main(int argc, char** argv)
     tf::TransformBroadcaster broadcaster;
     nav_msgs::GetMap srv_get_map;
 
-    float init_min_x = 2; // -1;
-    float init_min_y = 4; // -1;
+    float init_min_x = 2.5;
+    float init_min_y = 4;
     float init_min_a = -1;
-    float init_max_x = 4.5; // 2;
-    float init_max_y = 7;
+    float init_max_x = 4.3;
+    float init_max_y = 5;
     float init_max_a = 1;
-    float number_of_particles = 200;
+    float number_of_particles = 250;
     if(ros::param::has("~n"))
         ros::param::get("~n", number_of_particles);
     if(ros::param::has("~max_x"))
@@ -353,17 +346,17 @@ int main(int argc, char** argv)
              * Get the set of similarities by calling the calculate_particle_similarities function
              * Resample particles by calling the resample_particles function
              */
+            
             move_particles(particles, delta_pose.x, delta_pose.y, delta_pose.theta);
             simulated_scans = simulate_particle_scans(particles, static_map);
             particle_similarities = calculate_particle_similarities(simulated_scans, real_scan);
             particles = resample_particles(particles, particle_similarities);
-
             pub_particles.publish(particles);
             map_to_odom_transform = get_map_to_odom_transform(robot_odom, get_robot_pose_estimation(particles));
         }
         broadcaster.sendTransform(tf::StampedTransform(map_to_odom_transform, ros::Time::now(), "map", "odom"));
         ros::spinOnce();
-        loop.sleep();
+        loop.sleep(); 
     }
     return 0;
 }
