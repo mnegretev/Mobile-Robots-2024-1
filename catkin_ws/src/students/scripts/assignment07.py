@@ -38,23 +38,32 @@ def segment_by_color(img_bgr, points, obj_name):
     #   Example: 'points[240,320][1]' gets the 'y' value of the point corresponding to
     #   the pixel in the center of the image.
     #
-    if obj_name == 'pringles':
-        lower_lim = numpy.array([25, 50, 50])
-        upper_lim = numpy.array([35, 255, 255])
+    #hsv_lower_limit = numpy.array([25, 50, 50]) if obj_name == "pringles" else numpy.array([10, 200, 50])
+    #hsv_upper_limit = numpy.array([35, 255, 255]) if obj_name == "pringles" else numpy.array([20, 255, 255])
+    
+    if obj_name == "pringles":
+        hsv_lower_limit = numpy.array([25, 50, 50])
+        hsv_upper_limit = numpy.array([35, 255, 255])
+    elif obj_name == "drink":
+        hsv_lower_limit = numpy.array([100, 100, 100])
+        hsv_upper_limit = numpy.array([255, 255, 255])
     else:
-        lower_lim = numpy.array([10, 200, 50])
-        upper_lim = numpy.array([20, 255, 255])
-    img_hsv = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2HSV)
-    pix = cv2.inRange(img_hsv, lower_lim, upper_lim)
-    indexi = cv2.findNonZero(pix)
-    if indexi is not None:
-        centroid = cv2.mean(indexi)
-        center_row, center_col = int(centroid[0]), int(centroid[1])
-        x = points[center_row, center_col][0]
-        y = points[center_row, center_col][1]
-        z = points[center_row, center_col][2]
-        return [center_row, center_col, x, y, z]
-    else:
+        hsv_lower_limit = numpy.array([10, 200, 50])
+        hsv_upper_limit = numpy.array([20, 255, 255])
+    
+    hsv_img = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2HSV)
+    bin_img = cv2.inRange(hsv_img, hsv_lower_limit, hsv_upper_limit)
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT,(5,5))
+    bin_img = cv2.morphologyEx(bin_img, cv2.MORPH_OPEN, kernel)
+    
+    nonzero_elements = cv2.findNonZero(bin_img)
+    centroid_px = cv2.mean(nonzero_elements)
+    px_x, px_y = int(centroid_px[0]), int(centroid_px[1])
+     
+    x = points[px_y, px_x][0]
+    y = points[px_y, px_x][1]
+    z = points[px_y, px_x][2]
+    
     return [0,0,0,0,0]
 
 def callback_find_object(req):
