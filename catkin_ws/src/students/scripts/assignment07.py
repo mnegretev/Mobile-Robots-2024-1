@@ -22,6 +22,7 @@ from vision_msgs.msg import VisionObject
 NAME = "Camacho Sandoval Ricardo"
 
 def segment_by_color(img_bgr, points, obj_name):
+    global bin_img
     #
     # TODO:
     # - Assign lower and upper color limits according to the requested object:
@@ -38,17 +39,42 @@ def segment_by_color(img_bgr, points, obj_name):
     #   Example: 'points[240,320][1]' gets the 'y' value of the point corresponding to
     #   the pixel in the center of the image.
     #
-    
-    return [0,0,0,0,0]
+
+
+
+    hsv_bajo = numpy.array([25, 50, 50]) if obj_name == "pringles" else numpy.array([10, 200, 50]) #mismas de todo
+    hsv_alto = numpy.array([35, 255, 255]) if obj_name == "pringles" else numpy.array([20, 255, 255])
+
+    hsv_imagen = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2HSV)
+
+    bin_img = cv2.inRange(hsv_imagen, hsv_bajo, hsv_alto)
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT,(5,5))
+    bin_img = cv2.morphologyEx(bin_img, cv2.MORPH_OPEN, kernel)
+
+    nonzero_elements = cv2.findNonZero(bin_img)
+
+    cv2.bitwise_and(img_bgr, img_bgr, mask=nonzero_elements)
+
+    centroid_px = cv2.mean(nonzero_elements)
+    pxx, pxy = int(centroid_px[0]), int(centroid_px[1])
+  
+    x = points[pxy, pxx][0]
+    y = points[pxy, pxx][1]
+    z = points[pxy, pxx][2]
+    return [pxx,pxy,x,y,z]
 
 def callback_find_object(req):
     global pub_point, img_bgr
+
+    print("+++++++++++++++++++++++++++++++++")
     print("Trying to find object: " + req.name)
     arr = ros_numpy.point_cloud2.pointcloud2_to_array(req.point_cloud)
     rgb_arr = arr['rgb'].copy()
     rgb_arr.dtype = numpy.uint32
     r,g,b = ((rgb_arr >> 16) & 255), ((rgb_arr >> 8) & 255), (rgb_arr & 255)
     img_bgr = cv2.merge((numpy.asarray(b,dtype='uint8'),numpy.asarray(g,dtype='uint8'),numpy.asarray(r,dtype='uint8')))
+    print("*****************")
+
     [r, c, x, y, z] = segment_by_color(img_bgr, arr, req.name)
     hdr = Header(frame_id='realsense_link', stamp=rospy.Time.now())
     pub_point.publish(PointStamped(header=hdr, point=Point(x=x, y=y, z=z)))
@@ -60,18 +86,20 @@ def callback_find_object(req):
     return resp
 
 def main():
-    global pub_point, img_bgr
+    global pub_point, img_bgr#, bin_img
     print("ASSIGNMENT 07 - " + NAME)
     rospy.init_node("color_segmentation")
     rospy.Service("/vision/obj_reco/recognize_object", RecognizeObject, callback_find_object)
     pub_point = rospy.Publisher('/detected_object', PointStamped, queue_size=10)
     img_bgr = numpy.zeros((480, 640, 3), numpy.uint8)
+    bin_img = numpy.zeros((480, 640, 3), numpy.uint8)
     loop = rospy.Rate(10)
     while not rospy.is_shutdown():
-        cv2.imshow("Color Segmentation", img_bgr)
-        cv2.waitKey(1)
+
+        #cv2.imshow("Color Segmentation", img_bgr)
+        # cv2.imshow('bin_img', bin_img)
+        #cv2.waitKey(1)
         loop.sleep()
     
 if __name__ == '__main__':
     main()
-    
