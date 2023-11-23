@@ -38,8 +38,27 @@ def segment_by_color(img_bgr, points, obj_name):
     #   Example: 'points[240,320][1]' gets the 'y' value of the point corresponding to
     #   the pixel in the center of the image.
     #
-    
-    return [0,0,0,0,0]
+    if (obj_name == 'pringles'): 
+        min_valor = numpy.array([25, 50, 50]) 
+        max_valor = numpy.array([35, 255, 255])
+    else: #[10,200, 50] - [20, 255, 255]
+        min_valor = numpy.array([10,200, 50]) 
+        max_valor = numpy.array([20, 255, 255])
+    img_hsv = cv2.cvtColor(img_bgr,cv2.COLOR_BGR2HSV)
+    img_bin = cv2.inRange(img_hsv,min_valor, max_valor)
+    img_non_zero = cv2.findNonZero(img_bin)
+    centroide_pixel = cv2.mean(img_non_zero)
+    centroide_r, centroide_c = centroide_pixel[0], centroide_pixel[1]
+    x, y, z = 0,0,0
+    for cord in img_non_zero:
+        c,r = cord[0]           # columna , renglon
+        x += points[r,c][0] # accedemos a la posicion actual (r,c) en la imagen y al valor del 1r elemento (coordenada x)
+        y += points[r,c][1]
+        z += points[r,c][2]
+    centroide_x = x/len(img_non_zero)
+    centroide_y = y/len(img_non_zero)
+    centroide_z = z/len(img_non_zero)
+    return[centroide_r,centroide_c, centroide_x, centroide_y, centroide_z]
 
 def callback_find_object(req):
     global pub_point, img_bgr
