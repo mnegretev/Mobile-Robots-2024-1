@@ -149,7 +149,7 @@ geometry_msgs::PoseArray resample_particles(geometry_msgs::PoseArray& particles,
      * get the corresponding angle, then add noise, and the get again the corresponding quaternion.
      */
     for (size_t i = 0; i < particles.poses.size();i++){
-     	int idx = random_choice(probabilities);
+     	int idx = random_choice(similarities);
      	resampled_particles.poses[i].position.x = particles.poses[idx].position.x + rnd.gaussian(0,RESAMPLING_NOISE);
      	resampled_particles.poses[i].position.y = particles.poses[idx].position.y + rnd.gaussian(0,RESAMPLING_NOISE);
      	float angle = atan2(particles.poses[idx].orientation.z, particles.poses[idx].orientation.w)*2;
