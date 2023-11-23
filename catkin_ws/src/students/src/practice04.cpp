@@ -92,7 +92,23 @@ std::vector<float> calculate_particle_similarities(std::vector<sensor_msgs::Lase
      * IMPORTANT NOTE 2. Both, simulated an real scans, can have infinite ranges. Thus, when comparing readings,
      * ensure both simulated and real ranges are finite values. 
      */
-    
+    std::vector<float> deltas(simulated_scans.size(), 0);
+    float sum_similarities = 0;
+    for(int j=0; j<simulated_scans.size(); j++){
+        for(int i=0; i<simulated_scans[j].ranges.size(); i++){
+            if(simulated_scans[j].ranges[i] < real_scan.range_max && real_scan.ranges[i*LASER_DOWNSAMPLING] < real_scan.range_max)
+                deltas[j] += fabs(simulated_scans[j].ranges[i] - real_scan.ranges[i*LASER_DOWNSAMPLING]);
+            else
+                deltas[j] += real_scan.range_max;
+        }
+        deltas[j] /= simulated_scans[j].ranges.size();
+        similarities[j] = exp(-deltas[j]*deltas[j]/SENSOR_NOISE);
+        sum_similarities += similarities[j];
+    }
+    for(int i=0; i<similarities.size(); i++){
+        similarities[i] /=sum_similarities;
+    }
+
     return similarities;
 }
 
@@ -107,7 +123,14 @@ int random_choice(std::vector<float>& similarities)
      * Probability of picking an integer 'i' is given by the corresponding similarities[i] value.
      * Return the chosen integer. 
      */
-    
+    float beta=rnd.uniformReal(0,1);
+    for(int i=0; i<similarities.size(); i++){
+        if(beta<similarities[i])
+            return i;
+        else
+            beta -= similarities[i];
+    }
+
     return -1;
 }
 
@@ -130,6 +153,16 @@ geometry_msgs::PoseArray resample_particles(geometry_msgs::PoseArray& particles,
      * given by the quaternion (0,0,sin(theta/2), cos(theta/2)), thus, you should first
      * get the corresponding angle, then add noise, and the get again the corresponding quaternion.
      */
+    for(size_t i=0;i<particles.poses.size(); i++){
+        int idx = random_choice(similarities);
+        resampled_particles.poses[i].position.x = particles.poses[idx].position.x + rnd.gaussian(0, RESAMPLING_NOISE);
+        resampled_particles.poses[i].position.y = particles.poses[idx].position.y + rnd.gaussian(0, RESAMPLING_NOISE);
+        float angle = atan2(particles.poses[idx].orientation.z, particles.poses[idx].orientation.w)*2; 
+        angle += rnd.gaussian(0, RESAMPLING_NOISE);
+        resampled_particles.poses[i].orientation.w = cos(angle/2);
+        resampled_particles.poses[i].orientation.z = sin(angle/2);
+    }
+
     return resampled_particles;
 }
 
@@ -307,6 +340,10 @@ int main(int argc, char** argv)
              * Resample particles by calling the resample_particles function
              */
             
+            move_particles(particles, delta_pose.x, delta_pose.y, delta_pose.theta);
+            simulated_scans = simulate_particle_scans(particles,static_map);
+            particle_similarities = calculate_particle_similarities(simulated_scans, real_scan);
+            particles = resample_particles(particles, particle_similarities);
             pub_particles.publish(particles);
             map_to_odom_transform = get_map_to_odom_transform(robot_odom, get_robot_pose_estimation(particles));
         }
