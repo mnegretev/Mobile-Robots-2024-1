@@ -336,12 +336,11 @@ def take_requested_object(object, x, y, z):
 
         q = calculate_inverse_kinematics_left(x = x + 0.08,
                                               y = y,
-                                              z = z + 0.015,
+                                              z = z + 0.05,
                                               roll = 0.0,
-                                              pitch = - 1.5,
+                                              pitch = - 1.6,
                                               yaw = 0.0)
         
-        print("xyz: ", x, y, z)
         print("q: ", q)
         
         move_left_arm(q1 = q[0],
@@ -352,7 +351,7 @@ def take_requested_object(object, x, y, z):
                       q6 = q[5],
                       q7 = q[6])
 
-        move_left_gripper(q = -0.1)
+        move_left_gripper(q = -0.2)
 
         
     else:
@@ -364,6 +363,8 @@ def take_requested_object(object, x, y, z):
                                                pitch = - 1.7,
                                                yaw = 0.0)
         
+        print("q: ", q)
+
         move_right_arm(q1 = q[0],
                        q2 = q[1],
                        q3 = q[2],
