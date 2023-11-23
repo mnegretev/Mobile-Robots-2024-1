@@ -21,7 +21,7 @@
 #include <numeric>
 
 
-#define FULL_NAME "Castro Serrato Luis Joaquin"
+#define FULL_NAME "Romero Trujillo Jerson Gerardo"
 
 #define LASER_DOWNSAMPLING  10
 #define SENSOR_NOISE        0.1
