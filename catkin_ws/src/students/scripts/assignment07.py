@@ -38,8 +38,31 @@ def segment_by_color(img_bgr, points, obj_name):
     #   Example: 'points[240,320][1]' gets the 'y' value of the point corresponding to
     #   the pixel in the center of the image.
     #
+    lower_color_limit = [0, 0, 0]
+    upper_color_limit = [0, 0, 0]
+
+    # Assign lower and upper color limits according to the requested object
+    if obj_name == 'pringles':
+        lower_color_limit = np.array([25, 50, 50])
+        upper_color_limit = np.array([35, 255, 255])
+    else:
+        lower_color_limit = np.array([10, 200, 50])
+        upper_color_limit = np.array([20, 255, 255])
+    img_hsv = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2HSV)
+    mask = cv2.inRange(img_hsv, lower_color_limit, upper_color_limit)
+    nonzero_points = cv2.findNonZero(mask)
+    if nonzero_points is not None:
+        centroid = np.mean(nonzero_points, axis=0, dtype=np.int)
+        centroid_x = centroid[0][0]
+        centroid_y = centroid[0][1]
+        if centroid_x < points.shape[1] and centroid_y < points.shape[0]:
+            centroid_cartesian_x = points[centroid_y, centroid_x][0]
+            centroid_cartesian_y = points[centroid_y, centroid_x][1]
+            centroid_cartesian_z = points[centroid_y, centroid_x][2]
+
+            return [centroid_x, centroid_y, centroid_cartesian_x, centroid_cartesian_y, centroid_cartesian_z]
     
-    return [0,0,0,0,0]
+    return [0, 0, 0, 0, 0]  # Si no se encuentra un centroide
 
 def callback_find_object(req):
     global pub_point, img_bgr
