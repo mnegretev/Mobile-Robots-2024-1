@@ -19,7 +19,7 @@ from geometry_msgs.msg import PointStamped, Point
 from vision_msgs.srv import RecognizeObject, RecognizeObjectResponse
 from vision_msgs.msg import VisionObject
 
-NAME = "FULL_NAME"
+NAME = "Arriaga Mejia Jose Carlos"
 
 def segment_by_color(img_bgr, points, obj_name):
     #
