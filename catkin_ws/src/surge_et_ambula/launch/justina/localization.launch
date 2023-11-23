@@ -1,0 +1,24 @@
+<launch>
+  <include file="$(find surge_et_ambula)/launch/justina/gazebo_simul/justina_hardware_gazebo.launch"/>
+  
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find config_files)/rviz/localization.rviz"/>
+  
+  <node name="justina_gui" pkg="justina_gui" type="justina_gui_node" output="screen">
+    <param name="la_predefined" value="$(find config_files)/justina/manipulation/la_predefined.yaml"/>
+    <param name="ra_predefined" value="$(find config_files)/justina/manipulation/ra_predefined.yaml"/>
+    <param name="hd_predefined" value="$(find config_files)/justina/manipulation/hd_predefined.yaml"/>
+  </node>
+
+  <include file="$(find surge_et_ambula)/launch/justina/gazebo_simul/justina_gazebo_controllers.launch"/>
+  <arg name="static_map_file"  default="$(find config_files)/maps/appartment.yaml"/>
+  <arg name="prohibition_map_file"  default="$(find config_files)/prohibition_maps/appartment.yaml"/>
+  <arg name="/base_link_name" default="base_link"/>
+  
+  <node name="prohibition_map_server" pkg="map_server" type="map_server" output="screen" args="$(arg prohibition_map_file)">
+    <remap from="/static_map" to="/prohibition_map"/>
+    <remap from="/map" to="/prohibition_layer_map"/>
+  </node>
+ 
+  <node name="map_server" pkg="map_server" type="map_server" output="screen" args="$(arg static_map_file)"/>
+  
+</launch>
