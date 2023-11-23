@@ -20,7 +20,7 @@ from std_msgs.msg import Float64MultiArray
 from geometry_msgs.msg import PointStamped
 from manip_msgs.srv import *
 
-NAME = "FULL_NAME"
+NAME = "Olguin Castillo Luis Angel"
 
 def get_model_info():
     global joints, transforms
@@ -64,6 +64,19 @@ def forward_kinematics(q, Ti, Wi):
     #     Check online documentation of these functions:
     #     http://docs.ros.org/en/jade/api/tf/html/python/transformations.html
     #
+    H = tft.identity_matrix()
+    for i, qi in enumerate(q):
+        # rotation_matrix(angle, direction, point = None) -> rotation qi around axis Wi
+        Ri = tft.rotation_matrix(angle = qi, direction = Wi[i])
+        # concatenate(*matrices) -> Returns concatenation of series of transformation matrices
+        H = tft.concatenate_matrices(H, Ti[i], Ri)
+    H = tft.concatenate_matrices(H, Ti[7])
+    
+    x = H[0, 3]
+    y = H[1, 3]
+    z = H[2, 3]
+    
+    R, P, Y = tft.euler_from_matrix(H)
     return numpy.asarray([0,0,0,0,0,0])
 
 def jacobian(q, Ti, Wi):
@@ -92,6 +105,19 @@ def jacobian(q, Ti, Wi):
     #     
     J = numpy.asarray([[0.0 for a in q] for i in range(6)])            # J 6x7 full of zeros
     
+    q_next = numpy.asarray([[0.0 for j in range(len(q))] for i in range(len(q))])
+    q_prev = numpy.asarray([[0.0 for j in range(len(q))] for i in range(len(q))])
+
+    for i in range(len(q)):
+        q_next[i] = numpy.concatenate((q[:i],q[i] + delta_q, q[i+1:]), axis = None)
+        q_prev[i] = numpy.concatenate((q[:i],q[i] - delta_q, q[i+1:]), axis = None)
+    
+    for i in range(len(q)):
+        FK_next = forward_kinematics(q = q_next[i], Ti = Ti, Wi = Wi) # 6 x 1
+        FK_prev = forward_kinematics(q = q_prev[i], Ti = Ti, Wi = Wi) # 6 x 1
+        J_col_i = (FK_next - FK_prev) / (2 * delta_q)
+        J[:,i] = J_col_i
+        
     return J
 
 def inverse_kinematics_xyzrpy(x, y, z, roll, pitch, yaw, Ti, Wi, initial_guess):
@@ -123,6 +149,23 @@ def inverse_kinematics_xyzrpy(x, y, z, roll, pitch, yaw, Ti, Wi, initial_guess):
     #    Otherwise, return None
     #
     q = numpy.asarray(initial_guess)  # Initial guess
+    
+    p = forward_kinematics(q = q, Ti = Ti, Wi = Wi)
+    e = p - pd
+    e[3:] = ((e[3:] + numpy.pi) % (2 * numpy.pi)) - numpy.pi
+    while numpy.linalg.norm(e) > tolerance and iterations < max_iterations:
+        J = jacobian(q = q, Ti = Ti, Wi = Wi)
+        q = q - numpy.dot(numpy.linalg.pinv(J), e)
+        q = ((q + numpy.pi) % (2 * numpy.pi)) - numpy.pi
+        p = forward_kinematics(q = q, Ti = Ti, Wi = Wi)
+        e = p - pd
+        e[3:] = (e[3:] + numpy.pi) % (2 * numpy.pi) - numpy.pi
+        iterations += 1
+
+    if iterations > max_iterations:
+        print("It was not possible to calculate IK")
+        return None
+        
     return q
 
 def callback_la_ik_for_pose(req):
