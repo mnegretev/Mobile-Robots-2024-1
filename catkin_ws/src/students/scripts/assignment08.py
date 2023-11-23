@@ -20,7 +20,7 @@ from std_msgs.msg import Float64MultiArray
 from geometry_msgs.msg import PointStamped
 from manip_msgs.srv import *
 
-NAME = "FULL_NAME"
+NAME = "Romero Trujillo Jerson Gerardo"
 
 def get_model_info():
     global joints, transforms
@@ -43,87 +43,76 @@ def get_model_info():
         transforms['right'].append(tft.concatenate_matrices(T,R))
     
 def forward_kinematics(q, Ti, Wi):
-    #
-    # TODO:
-    # Calculate the forward kinematics given the set of seven angles 'q'
-    # You can use the following steps:
-    #     H = I   # Assing to H a 4x4 identity matrix
-    #     for all qi in q:
-    #         H = H * Ti * Ri
-    #     H = H * Ti[7]
-    #     Get xyzRPY from the resulting Homogeneous Transformation 'H'
-    # Where:
-    #     Ti are the Homogeneous Transformations from frame i to frame i-1 when joint i is at zero position
-    #     Ri are the Homogeneous Transformations with zero-translation and rotation qi around axis Wi.
-    #     Ti[7] is the final Homogeneous Transformation from gripper center to joint 7.
-    # Hints:
-    #     Use the tft.identity_matrix() function to get the 4x4 I
-    #     Use the tft.concatenate_matrices() function for multiplying Homogeneous Transformations
-    #     Use the tft.rotation_matrix() matrices Ri.
-    #     Use the tft.euler_from_matrix() function to get RPY from matrix H
-    #     Check online documentation of these functions:
-    #     http://docs.ros.org/en/jade/api/tf/html/python/transformations.html
-    #
-    return numpy.asarray([0,0,0,0,0,0])
+    # Inicializar la matriz de Transformación Homogénea como matriz de identidad
+    H = tft.identity_matrix()
+
+    # Iterar a través de cada ángulo de articulación 'qi' y actualizar la matriz de Transformación Homogénea
+    for i, qi in enumerate(q):
+        # Calcule la matriz de transformación homogénea para la articulación i
+        Ri = tft.rotation_matrix(qi, Wi[i])
+        H = numpy.dot(H, numpy.dot(Ti[i], Ri))
+
+    # Multiplica la matriz de Transformación Homogénea final con la transformación para el centro de la pinza.
+    H = numpy.dot(H, Ti[7])
+
+    # Multiplica la matriz de Transformación Homogénea final con la transformación para el centro de la pinza.
+    xyz, rpy = tft.translation_from_matrix(H), tft.euler_from_matrix(H)
+
+    # Devuelve la matriz concatenada 
+    return numpy.concatenate((xyz, rpy))
+
 
 def jacobian(q, Ti, Wi):
     delta_q = 0.000001
-    #
-    # TODO:
-    # Calculate the Jacobian given a kinematic description Ti and Wi
-    # where:
-    # Ti are the Homogeneous Transformations from frame i to frame i-1 when joint i is at zero position
-    # Wi are the axis of rotation of i-th joint
-    # Use the numeric approximation:   f'(x) = (f(x+delta) - f(x-delta))/(2*delta)
-    #
-    # You can do the following steps:
-    #     J = matrix of 6x7 full of zeros
-    #     q_next = [q1+delta       q2        q3   ....     q7
-    #                  q1       q2+delta     q3   ....     q7
-    #                              ....
-    #                  q1          q2        q3   ....   q7+delta]
-    #     q_prev = [q1-delta       q2        q3   ....     q7
-    #                  q1       q2-delta     q3   ....     q7
-    #                              ....
-    #                  q1          q2        q3   ....   q7-delta]
-    #     FOR i = 1,..,7:
-    #           i-th column of J = ( FK(i-th row of q_next) - FK(i-th row of q_prev) ) / (2*delta_q)
-    #     RETURN J
-    #     
-    J = numpy.asarray([[0.0 for a in q] for i in range(6)])            # J 6x7 full of zeros
-    
+
+    # Inicializar la matriz jacobiana con ceros
+    J = numpy.zeros((6, len(q)))
+
+    # Iterar a través de cada ángulo conjunto 'qi'
+    for i in range(len(q)):
+        # Creea una copia de la matriz de ángulos conjuntos para la diferencia finita directa
+        q_forward = q.copy()
+        q_forward[i] += delta_q
+
+        # Calcule la cinemática directa para los ángulos de las articulaciones perturbadas.
+        p_forward = forward_kinematics(q_forward, Ti, Wi)
+
+        # Creea una copia de la matriz de ángulos conjuntos para la diferencia finita hacia atrás
+        q_backward = q.copy()
+        q_backward[i] -= delta_q
+
+        # Calcule la cinemática directa para los ángulos de las articulaciones perturbadas.
+        p_backward = forward_kinematics(q_backward, Ti, Wi)
+
+        # Calcula la columna del jacobiano usando la fórmula de diferencias finitas
+        J[:, i] = (p_forward - p_backward) / (2 * delta_q)
+
     return J
 
+
 def inverse_kinematics_xyzrpy(x, y, z, roll, pitch, yaw, Ti, Wi, initial_guess):
-    pd = numpy.asarray([x,y,z,roll,pitch,yaw])  # Desired configuration
+    pd = numpy.asarray([x, y, z, roll, pitch, yaw])  # Configuración deseada
     tolerance = 0.01
     max_iterations = 20
     iterations = 0
-    #
-    # TODO:
-    # Solve the IK problem given a kinematic description (Ti, Wi) and a desired configuration.
-    # where:
-    # Ti are the Homogeneous Transformations from frame i to frame i-1 when joint i is at zero position
-    # Wi are the axis of rotation of i-th joint
-    # Use the Newton-Raphson method for root finding. (Find the roots of equation FK(q) - pd = 0)
-    # You can do the following steps:
-    #
-    #    Set an initial guess for 'q' (given as parameter)
-    #    Calculate Forward Kinematics 'p' by calling the corresponding function
-    #    Calcualte error = p - pd
-    #    Ensure orientation angles of error are in [-pi,pi]
-    #    WHILE |error| > TOL and iterations < maximum iterations:
-    #        Calculate Jacobian
-    #        Update q estimation with q = q - pseudo_inverse(J)*error
-    #        Ensure all angles q are in [-pi,pi]
-    #        Recalculate forward kinematics p
-    #        Recalculate error and ensure angles are in [-pi,pi]
-    #        Increment iterations
-    #    Return calculated q if maximum iterations were not exceeded
-    #    Otherwise, return None
-    #
-    q = numpy.asarray(initial_guess)  # Initial guess
-    return q
+    q = numpy.asarray(initial_guess)
+
+    while iterations < max_iterations:
+        p = forward_kinematics(q, Ti, Wi)
+        error = p - pd
+        error[3:6] = (error[3:6] + numpy.pi) % (2 * numpy.pi) - numpy.pi
+        if numpy.linalg.norm(error) < tolerance:
+            return q
+        J = jacobian(q, Ti, Wi)
+
+        # Actualice los ángulos de las articulaciones utilizando el método de Newton-Raphson.
+        q -= numpy.linalg.pinv(J).dot(error)
+        q = (q + numpy.pi) % (2 * numpy.pi) - numpy.pi
+        p = forward_kinematics(q, Ti, Wi)
+        error = p - pd
+        error[3:6] = (error[3:6] + numpy.pi) % (2 * numpy.pi) - numpy.pi
+        iterations += 1
+    return None
 
 def callback_la_ik_for_pose(req):
     global transforms, joints
