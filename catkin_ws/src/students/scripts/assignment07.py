@@ -38,8 +38,18 @@ def segment_by_color(img_bgr, points, obj_name):
     #   Example: 'points[240,320][1]' gets the 'y' value of the point corresponding to
     #   the pixel in the center of the image.
     #
-    hsv_lower_limit = numpy.array([25, 50, 50]) if obj_name == "pringles" else numpy.array([10, 200, 50])
-    hsv_upper_limit = numpy.array([35, 255, 255]) if obj_name == "pringles" else numpy.array([20, 255, 255])
+    #hsv_lower_limit = numpy.array([25, 50, 50]) if obj_name == "pringles" else numpy.array([10, 200, 50])
+    #hsv_upper_limit = numpy.array([35, 255, 255]) if obj_name == "pringles" else numpy.array([20, 255, 255])
+    
+    if obj_name == "pringles":
+        hsv_lower_limit = numpy.array([25, 50, 50])
+        hsv_upper_limit = numpy.array([35, 255, 255])
+    elif obj_name == "drink":
+        hsv_lower_limit = numpy.array([100, 100, 100])
+        hsv_upper_limit = numpy.array([255, 255, 255])
+    else:
+        hsv_lower_limit = numpy.array([10, 200, 50])
+        hsv_upper_limit = numpy.array([20, 255, 255])
     
     hsv_img = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2HSV)
     bin_img = cv2.inRange(hsv_img, hsv_lower_limit, hsv_upper_limit)
