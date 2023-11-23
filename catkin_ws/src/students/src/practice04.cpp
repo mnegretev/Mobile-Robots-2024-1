@@ -121,11 +121,11 @@ int random_choice(std::vector<float>& similarities)
      * Return the chosen integer. 
      */
     float beta = rnd.uniformReal(0,1);
-     for(int i = 0; i < probabilities.size();i++)
-       if(beta < probabilities[i])
+     for(int i = 0; i < similarities.size();i++)
+       if(beta < similarities[i])
          return i;
        else
-         beta -= probabilities[i];
+         beta -= similarities[i];
     return -1;
 }
 
