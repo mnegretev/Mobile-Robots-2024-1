@@ -29,7 +29,9 @@ from sound_play.msg import SoundRequest
 from vision_msgs.srv import *
 from hri_msgs.msg import *
 
-NAME = "FULL NAME"
+from manip_msgs.srv import *
+
+NAME = "FLORES_RIVAS, MEZA_MARTINEZ, RODRIGUEZ_FUENTES"
 
 #
 # Global variable 'speech_recognized' contains the last recognized sentence
@@ -162,32 +164,56 @@ def say(text):
 # This function calls the service for calculating inverse kinematics for left arm (practice 08)
 # and returns the calculated articular position.
 #
-def calculate_inverse_kinematics_left(x,y,z,roll, pitch, yaw):
+def calculate_inverse_kinematics_left(x, y, z, roll, pitch, yaw):
+    q_result = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+    req_ik = InverseKinematicsPose2PoseRequest()
     req_ik.x = x
     req_ik.y = y
     req_ik.z = z
-    req_ik.roll  = roll
+    req_ik.roll = roll
     req_ik.pitch = pitch
-    req_ik.yaw   = yaw
+    req_ik.yaw = yaw
+    req_ik.initial_guess = q_result
+
     clt = rospy.ServiceProxy("/manipulation/la_ik_pose", InverseKinematicsPose2Pose)
-    resp = clt(req_ik)
-    return resp.q
+    try:
+        resp = clt(req_ik)
+        if resp is not None and hasattr(resp, 'q'):
+            q_result = resp.q
+        else:
+            print("Error: Respuesta no válida. Respuesta:", resp)
+    except rospy.ServiceException as e:
+        print(f"Error al llamar al servicio: {e}")
+
+    return q_result
 
 #
 # This function calls the service for calculating inverse kinematics for right arm (practice 08)
 # and returns the calculated articular position.
 #
-def calculate_inverse_kinematics_left(x,y,z,roll, pitch, yaw):
-    req_ik = InverseKinematicsRequest()
+def calculate_inverse_kinematics_right(x, y, z, roll, pitch, yaw):
+    q_result = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+    req_ik = InverseKinematicsPose2PoseRequest()
     req_ik.x = x
     req_ik.y = y
     req_ik.z = z
-    req_ik.roll  = roll
+    req_ik.roll = roll
     req_ik.pitch = pitch
-    req_ik.yaw   = yaw
+    req_ik.yaw = yaw
+    req_ik.initial_guess = q_result
+
     clt = rospy.ServiceProxy("/manipulation/ra_ik_pose", InverseKinematicsPose2Pose)
-    resp = clt(req_ik)
-    return [resp.q1, resp.q2, resp.q3, resp.q4, resp.q5, resp.q6, resp.q7]
+    try:
+        resp = clt(req_ik)
+        if resp is not None and hasattr(resp, 'q'):
+            q_result = resp.q
+            print
+        else:
+            print("Error: Respuesta no válida. Respuesta:", resp)
+    except rospy.ServiceException as e:
+        print(f"Error al llamar al servicio: {e}")
+
+    return q_result
 
 #
 # Calls the service for finding object (practice 08) and returns
@@ -214,6 +240,40 @@ def transform_point(x,y,z, source_frame, target_frame):
     obj_p = listener.transformPoint(target_frame, obj_p)
     return [obj_p.point.x, obj_p.point.y, obj_p.point.z]
 
+def location(object):
+    if object=='pringles':
+        target = 'shoulders_left_link'
+    else:
+        target = 'shoulders_right_link'
+    x, y, z = find_object(object) #Coordenadas w.r.t
+    x, y, z = transform_point(x, y, z, "realsense_link", target)#Pasar coordenadas al target
+    return (x,y,z)
+    
+def take_object(object, x, y, z):
+    move_base(0, 0.1, 0.5)#Que se acerque a la mesa un poco
+    if object=='pringles':
+        move_left_arm(-1.2,0.2,0.0,1.6,0.0,1.1,0.0)#Mover a la posicion prepare, es diferente en left y right arm
+        q = calculate_inverse_kinematics_left(x+0.02,y,z+0.05,0,-1.3,0)#5 cm alejado del centroide, pitch para que alcance
+        move_left_arm(q[0],q[1],q[2],q[3],q[4],q[5],q[6])#Mover cerca del objeto
+        rospy.sleep(2)#Que espere brevemente antes de chocar
+        move_left_gripper(-0.1)#Creo que con este valor ya alcanza a agarrar cualquier objeto
+        move_base(0.1,0,0.5)#Retroceder a una posicion segura una vez tomado el objeto
+    else:
+        move_right_arm(-1.2,-0.2,0.0,1.6,1.2,0.0,0.0)#Lo mismo de arriba, pero con los valores de right arm
+        q = calculate_inverse_kinematics_right(x+0.05,y,z+0.05,0,-1.3,0)
+        move_right_arm(q[0],q[1],q[2],q[3],q[4],q[5],q[6])
+        rospy.sleep(2)
+        move_rigth_gripper(-0.1)
+        move_base(0.1,0,0.5)
+
+def walking(ubication): #Navegar hasta la requested location
+    pass
+    
+
+def finish_line(goal_ubication,current_loc):#Alcanzar el objetivo
+    #Saber que llegamos y entregar el objeto
+    pass
+    
 def main():
     global new_task, recognized_speech, executing_task, goal_reached
     global pubLaGoalPose, pubRaGoalPose, pubHdGoalPose, pubLaGoalGrip, pubRaGoalGrip
@@ -261,6 +321,38 @@ def main():
             print("Moving head to look at table...")
             move_head(0, -0.9)
             current_state = "SM_FIND_OBJECT"
+
+        elif current_state == "SM_FIND_OBJECT":
+            x, y, z = location(requested_object)
+            print("Object finded")
+            say("I found the object")
+            current_state = "SM_TAKE_OBJECT"
+            
+        elif current_state == "SM_TAKE_OBJECT":
+            take_object(requested_object, x, y, z)
+            print("Object succesfully taken")
+            say("I got the object, thrust me")
+            current_state = "SM_NAVIGATE"
+            
+        elif current_state == "SM_NAVIGATE":
+            walking(requested_location) #Una funcion que navegue a la localizacion deseada
+            print("Navigation in process...")
+            say("I will deliver the desired object")
+            if goal_reached: #Hay que pensar que condicion con el goal_to_goal
+                current_state = "SM_GOAL_REACHED"
+            else:
+                current_state = "SM_NAVIGATE" #Que siga navegando en lo que alcanza el objetivo
+            
+        elif current_state == "SM_GOAL_REACHED":
+            finish_line(requested_location,current_location) #Goal_to_goal ayuda a este estado y al anterior, no existe la variable current_location
+            callback_goal_reached(msg)
+            say("I have reached the goal")
+            current_state = "SM_RETURN"
+            
+        elif current_state == "SM_RETURN":
+            walking(start) #Guardar la informacion del lugar de partida o regresar al origen, actualmente no existe "start"
+            print("Succesfully base return")
+            say("Safely returned to home")
         loop.sleep()
 
 if __name__ == '__main__':
