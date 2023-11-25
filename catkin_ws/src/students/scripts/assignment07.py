@@ -53,6 +53,7 @@ def segment_by_color(img_bgr, points, obj_name):
     x = points[px_y, px_x][0]
     y = points[px_y, px_x][1]
     z = points[px_y, px_x][2]
+    
     return [px_x,px_y,x,y,z]
 
 def callback_find_object(req):
