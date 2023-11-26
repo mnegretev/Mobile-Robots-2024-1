@@ -72,7 +72,7 @@ def move_left_arm(q1,q2,q3,q4,q5,q6,q7):
     msg.data.append(q6)
     msg.data.append(q7)
     pubLaGoalPose.publish(msg)
-    time.sleep(2.0)
+    time.sleep(1.5)
 
 #
 # This function sends the goal angular position to the left gripper and sleeps 1 second
@@ -81,7 +81,7 @@ def move_left_arm(q1,q2,q3,q4,q5,q6,q7):
 def move_left_gripper(q):
     global pubLaGoalGrip
     pubLaGoalGrip.publish(q)
-    time.sleep(1.0)
+    time.sleep(1.5)
 
 #
 # This function sends the goal articular position to the right arm and sleeps 2 seconds
@@ -107,7 +107,7 @@ def move_right_arm(q1,q2,q3,q4,q5,q6,q7):
 def move_right_gripper(q):
     global pubRaGoalGrip
     pubRaGoalGrip.publish(q)
-    time.sleep(1.0)
+    time.sleep(1.5)
 
 #
 # This function sends the goal pan-tilt angles to the head and sleeps 1 second
@@ -165,55 +165,32 @@ def say(text):
 # and returns the calculated articular position.
 #
 def calculate_inverse_kinematics_left(x, y, z, roll, pitch, yaw):
-    q_result = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-    req_ik = InverseKinematicsPose2PoseRequest()
+    req_ik = InverseKinematicsPose2PoseRequest()   #######################
     req_ik.x = x
     req_ik.y = y
     req_ik.z = z
-    req_ik.roll = roll
+    req_ik.roll  = roll
     req_ik.pitch = pitch
-    req_ik.yaw = yaw
-    req_ik.initial_guess = q_result
-
+    req_ik.yaw   = yaw
     clt = rospy.ServiceProxy("/manipulation/la_ik_pose", InverseKinematicsPose2Pose)
-    try:
-        resp = clt(req_ik)
-        if resp is not None and hasattr(resp, 'q'):
-            q_result = resp.q
-        else:
-            print("Error: Respuesta no válida. Respuesta:", resp)
-    except rospy.ServiceException as e:
-        print(f"Error al llamar al servicio: {e}")
-
-    return q_result
+    resp = clt(req_ik)
+    return resp.q   #######################
 
 #
 # This function calls the service for calculating inverse kinematics for right arm (practice 08)
 # and returns the calculated articular position.
 #
 def calculate_inverse_kinematics_right(x, y, z, roll, pitch, yaw):
-    q_result = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-    req_ik = InverseKinematicsPose2PoseRequest()
+    req_ik = InverseKinematicsPose2PoseRequest()   #######################
     req_ik.x = x
     req_ik.y = y
     req_ik.z = z
-    req_ik.roll = roll
+    req_ik.roll  = roll
     req_ik.pitch = pitch
-    req_ik.yaw = yaw
-    req_ik.initial_guess = q_result
-
+    req_ik.yaw   = yaw
     clt = rospy.ServiceProxy("/manipulation/ra_ik_pose", InverseKinematicsPose2Pose)
-    try:
-        resp = clt(req_ik)
-        if resp is not None and hasattr(resp, 'q'):
-            q_result = resp.q
-            print
-        else:
-            print("Error: Respuesta no válida. Respuesta:", resp)
-    except rospy.ServiceException as e:
-        print(f"Error al llamar al servicio: {e}")
-
-    return q_result
+    resp = clt(req_ik)
+    return resp.q   #######################
 
 #
 # Calls the service for finding object (practice 08) and returns
@@ -247,24 +224,79 @@ def location(object):
         target = 'shoulders_right_link'
     x, y, z = find_object(object) #Coordenadas w.r.t
     x, y, z = transform_point(x, y, z, "realsense_link", target)#Pasar coordenadas al target
+    if object=='pringles':
+        maxi = 0
+        while x > 0.62 or x < 0.58 or z < -0.46:
+            x, y, z = find_object(object) #Coordenadas w.r.t
+            x, y, z = transform_point(x, y, z, "realsense_link", target)
+            maxi += 1
+            if maxi == 10:
+                x = 0.60
+                z = -0.38
+                print("Max iterations reached")
     return (x,y,z)
     
 def take_object(object, x, y, z):
-    move_base(0, 0.1, 0.5)#Que se acerque a la mesa un poco
+    # move_base(0.1, 0.0, 1.0)#Que se acerque a la mesa un poco
+    print(f"Object: {object}")
     if object=='pringles':
-        move_left_arm(-1.2,0.2,0.0,1.6,0.0,1.1,0.0)#Mover a la posicion prepare, es diferente en left y right arm
-        q = calculate_inverse_kinematics_left(x+0.02,y,z+0.05,0,-1.3,0)#5 cm alejado del centroide, pitch para que alcance
-        move_left_arm(q[0],q[1],q[2],q[3],q[4],q[5],q[6])#Mover cerca del objeto
+        move_left_arm(-1.2,0.2,0.0,1.9,0.0,1.6,0.0)#Mover a la posicion prepare, es diferente en left y right arm
+        q = calculate_inverse_kinematics_left(x-0.02,y+0.03,z+0.15,0,-1.3,0)#5 cm alejado del centroide, pitch para que alcance
+        print(f"{q[0]},{q[1]},{q[2]},{q[3]},{q[4]},{q[5]},{q[6]}")
+        move_left_gripper(0.3)
+        move_base(-0.1, 0.0, 1.0)
+        move_left_arm(q[0]/2.0,0.2,0.0,1.9,0.0,1.6,0.0)
+        move_left_arm(q[0]/2.0,q[1]/2.0,0.0,1.9,0.0,1.6,0.0)
+        move_left_arm(q[0]/2.0,q[1]/2.0,q[2]/2.0,1.9,0.0,1.6,0.0)
+        move_left_arm(q[0]/2.0,q[1]/2.0,q[2]/2.0,1.9,0.0,0.0,0.0)
+        move_left_arm(q[0]/1.5,q[1],q[2]/2.0,1.9,0.0,q[5]/2.0,0.0)
+        move_left_arm(q[0]/1.5,q[1],q[2]/1.5,1.9,0.0,q[5]/2.0,0.0)
+        
+        move_base(0.2, 0.0, 0.8)
+        move_base(0.1, 0.0, 0.8)
+        
+        move_left_arm(q[0]/1.5,q[1],q[2],1.9,0.0,q[5]/2.0,0.0)
+        move_left_arm(q[0]/1.5,q[1],q[2],1.9,0.0,q[5]/1.6,q[6])
+        move_left_arm(q[0]/1.5,q[1],q[2],q[3],0.0,q[5]/1.6,q[6])
+        move_left_arm(q[0],q[1],q[2],q[3],q[4],q[5]/1.6,q[6])
+        move_left_arm(q[0],q[1],q[2],q[3],q[4],q[5],q[6])
+        
         rospy.sleep(2)#Que espere brevemente antes de chocar
-        move_left_gripper(-0.1)#Creo que con este valor ya alcanza a agarrar cualquier objeto
-        move_base(0.1,0,0.5)#Retroceder a una posicion segura una vez tomado el objeto
+        move_left_gripper(-0.3)
+        move_left_arm(q[0]+0.4,q[1],q[2],q[3],q[4],q[5],q[6])
+        move_base(-0.2,0,2.0)#Retroceder a una posicion segura una vez tomado el objeto
     else:
-        move_right_arm(-1.2,-0.2,0.0,1.6,1.2,0.0,0.0)#Lo mismo de arriba, pero con los valores de right arm
-        q = calculate_inverse_kinematics_right(x+0.05,y,z+0.05,0,-1.3,0)
+        move_right_arm(-1.2,-0.2,0.0,1.9,1.6,0.0,0.0)#Lo mismo de arriba, pero con los valores de right arm
+        print(f"({x} {y} {z})")
+        q = calculate_inverse_kinematics_right(x+0.05,y,z+0.17,0,-1.3,0)
+        print(f"{q[0]},{q[1]},{q[2]},{q[3]},{q[4]},{q[5]},{q[6]}")
+        move_right_gripper(0.3)
+        # move_base(-0.1, 0.0, 1.0)
+        move_right_arm(q[0]/2.0,-0.2,0.0,1.9,1.6,0.0,0.0)
+        move_right_arm(q[0]/2.0,q[1]/2.0,0.0,1.9,1.6,0.0,0.0)
+        move_right_arm(q[0]/2.0,q[1]/2.0,q[2]/2.0,1.9,1.6,0.0,0.0)
+        move_right_arm(q[0]/2.0,q[1]/2.0,q[2]/2.0,1.9,1.6,0.0,0.0)
+        move_right_arm(q[0]/1.5,q[1],q[2]/2.0,1.9,q[4]/2.0,0.0,0.0)
+        move_right_arm(q[0]/1.5,q[1],q[2],1.9,q[4]/2.0,0.0,0.0)
+        
+        move_base(0.2, 0.0, 0.8)
+        move_base(0.1, 0.0, 0.8)
+        
+        move_right_arm(q[0]/1.5,q[1],q[2],1.9,q[4]/2.0,0.0,0.0)
+        print(" ######################### 1 #########################")
+        move_right_arm(q[0]/1.5,q[1],q[2],1.9,q[4]/1.6,0.0,q[6])
+        print(" ######################### 2 #########################")
+        move_right_arm(q[0]/1.5,q[1],q[2],q[3],q[4]/1.6,q[5]/2.0,q[6])
+        print(" ######################### 3 #########################")
+        move_right_arm(q[0],q[1],q[2],q[3],q[4]/1.6,q[5],q[6])
+        print(" ######################### 4 #########################")
         move_right_arm(q[0],q[1],q[2],q[3],q[4],q[5],q[6])
-        rospy.sleep(2)
-        move_rigth_gripper(-0.1)
-        move_base(0.1,0,0.5)
+        print(" ######################### 5 #########################")
+        # move_base(0.1, 0.0, 1.0)
+        rospy.sleep(2)#Que espere brevemente antes de chocar
+        move_right_gripper(-0.3)#Creo que con este valor ya alcanza a agarrar cualquier objeto
+        move_right_arm(q[0]+0.3,q[1],q[2],q[3],q[4]+0.3,q[5],q[6])
+        move_base(-0.2,0,2.0)#Retroceder a una posicion segura una vez tomado el objeto
 
 def walking(ubication): #Navegar hasta la requested location
     pass
@@ -318,20 +350,36 @@ def main():
                 executing_task = True
                 
         elif current_state == "SM_MOVE_HEAD":
+            if requested_object == 'pringles':
+                move_head(0.0, -1.0)
+            else:
+                move_head(0.0, -0.6)
             print("Moving head to look at table...")
-            move_head(0, -0.9)
             current_state = "SM_FIND_OBJECT"
 
         elif current_state == "SM_FIND_OBJECT":
-            x, y, z = location(requested_object)
-            print("Object finded")
+            if requested_object == 'pringles':
+                move_base(0.2, 0.0, 2.2) #Que se acerque a la mesa un poco
+                print(requested_object)
+                x, y, z = location(requested_object)
+                
+                print(f"Co ({x} {y} {z})")
+            else:
+                
+                print(requested_object)
+                x, y, z = location(requested_object)
+                print(f"Co ({x} {y} {z}")
+                move_base(0.2, 0.0, 2.5)
+                x = x - 0.3
+                
+            print("Object found")
             say("I found the object")
             current_state = "SM_TAKE_OBJECT"
             
         elif current_state == "SM_TAKE_OBJECT":
             take_object(requested_object, x, y, z)
             print("Object succesfully taken")
-            say("I got the object, thrust me")
+            # say("I got the object, thrust me")
             current_state = "SM_NAVIGATE"
             
         elif current_state == "SM_NAVIGATE":
