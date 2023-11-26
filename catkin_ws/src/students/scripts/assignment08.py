@@ -20,7 +20,7 @@ from std_msgs.msg import Float64MultiArray
 from geometry_msgs.msg import PointStamped
 from manip_msgs.srv import *
 
-NAME = "Villeda Hernandez Erick Ricardo"
+NAME = "Villeda Hernandez Erick Ricardo."
 
 def get_model_info():
     global joints, transforms
@@ -64,6 +64,14 @@ def forward_kinematics(q, Ti, Wi):
     #     Check online documentation of these functions:
     #     http://docs.ros.org/en/jade/api/tf/html/python/transformations.html
     #
+    
+    # Observations:
+    #   * q is a list of seven elements (len(q) = 7)
+    #   * Ti is a list of eight elements (len(Ti) = 8) where each element is a (4,4) numpy array
+    #   * Wi is a list of eight elements (len(Wi) = 8) where each element is a list of three elements (numbers)
+    #     that indicates direction
+    #   * Ri is an homogeneous transformation with zero translation
+    
     H = tft.identity_matrix()
     for i, qi in enumerate(q):
         # rotation_matrix(angle, direction, point = None) -> rotation qi around axis Wi
@@ -103,20 +111,12 @@ def jacobian(q, Ti, Wi):
     #     FOR i = 1,..,7:
     #           i-th column of J = ( FK(i-th row of q_next) - FK(i-th row of q_prev) ) / (2*delta_q)
     #     RETURN J
-    #     
+    #
     J = numpy.asarray([[0.0 for a in q] for i in range(6)])            # J 6x7 full of zeros
-    q_next = numpy.asarray([[0.0 for j in range(len(q))] for i in range(len(q))])
-    q_prev = numpy.asarray([[0.0 for j in range(len(q))] for i in range(len(q))])
-
+    q_next = numpy.asarray([q,]*len(q)) + delta_q * numpy.identity(len(q))
+    q_prev = numpy.asarray([q,]*len(q)) - delta_q * numpy.identity(len(q))
     for i in range(len(q)):
-        q_next[i] = numpy.concatenate((q[:i],q[i] + delta_q, q[i+1:]), axis = None)
-        q_prev[i] = numpy.concatenate((q[:i],q[i] - delta_q, q[i+1:]), axis = None)
-    
-    for i in range(len(q)):
-        FK_next = forward_kinematics(q = q_next[i], Ti = Ti, Wi = Wi) # 6 x 1
-        FK_prev = forward_kinematics(q = q_prev[i], Ti = Ti, Wi = Wi) # 6 x 1
-        J_col_i = (FK_next - FK_prev) / (2 * delta_q)
-        J[:,i] = J_col_i
+        J[:,i] = (forward_kinematics(q_next[i,:], Ti, Wi) - forward_kinematics(q_prev[i,:], Ti, Wi)) / (2 * delta_q)
     
     return J
 
@@ -151,14 +151,14 @@ def inverse_kinematics_xyzrpy(x, y, z, roll, pitch, yaw, Ti, Wi, initial_guess):
     q = numpy.asarray(initial_guess)  # Initial guess
     p = forward_kinematics(q = q, Ti = Ti, Wi = Wi)
     e = p - pd
-    e[3:] = ((e[3:] + numpy.pi) % (2 * numpy.pi)) - numpy.pi
+    e[3:] = ((e[3:] + math.pi) % (2 * math.pi)) - math.pi
     while numpy.linalg.norm(e) > tolerance and iterations < max_iterations:
         J = jacobian(q = q, Ti = Ti, Wi = Wi)
         q = q - numpy.dot(numpy.linalg.pinv(J), e)
-        q = ((q + numpy.pi) % (2 * numpy.pi)) - numpy.pi
+        q = ((q + math.pi) % (2 * math.pi)) - math.pi
         p = forward_kinematics(q = q, Ti = Ti, Wi = Wi)
         e = p - pd
-        e[3:] = (e[3:] + numpy.pi) % (2 * numpy.pi) - numpy.pi
+        e[3:] = (e[3:] + math.pi) % (2 * math.pi) - math.pi
         iterations += 1
 
     if iterations > max_iterations:
