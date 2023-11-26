@@ -48,8 +48,7 @@ class NeuralNetwork(object):
         # return a list containing the output of each layer, from input to output.
         # Include input x as the first output.
         #
-        y = []
-        y.append(x)
+        y = [x]
         for i in range(len(self.biases)):
             z = numpy.dot(self.weights[i],x) + self.biases[i]
             x = 1.0 / (1.0 + numpy.exp(-z))
@@ -79,13 +78,13 @@ class NeuralNetwork(object):
         #
         delta = (y[-1] - yt)*y[-1]*(1 - y[-1])
         nabla_b[-1] = delta
-        nabla_w[-1] = delta*y[-2].transpose()
+        nabla_w[-1] =numpy.dot(delta, y[-2].transpose())
 
         for i in range(2, self.num_layers):
             delta = numpy.dot(self.weights[-i + 1].transpose(), delta)*y[-i]*(1.0 - y[-i])
-            nabla_b[-i] = delta
             nabla_w[-i] = numpy.dot(delta,y[-i - 1].transpose())
-        
+            nabla_b[-i] = delta
+           
 
         return nabla_w, nabla_b
 
@@ -145,7 +144,7 @@ def load_dataset(folder):
     return list(zip(training_dataset, training_labels)), list(zip(testing_dataset, testing_labels))
 
 def main():
-    print("PRACTICE 09 - " + NAME)
+    print("Assignment 09 - " + NAME)
     rospy.init_node("practice09")
     rospack = rospkg.RosPack()
     dataset_folder = rospack.get_path("config_files") + "/handwritten_digits/"
@@ -172,7 +171,7 @@ def main():
         pass
     
     nn.train_by_SGD(training_dataset, epochs, batch_size, learning_rate)
-    numpy.savez(dataset_folder + "network",w=nn.weights, b=nn.biases)
+    #numpy.savez(dataset_folder + "network",w=nn.weights, b=nn.biases)
     
     print("\nPress key to test network or ESC to exit...")
     numpy.set_printoptions(formatter={'float_kind':"{:.3f}".format})
