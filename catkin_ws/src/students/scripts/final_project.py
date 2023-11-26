@@ -29,7 +29,7 @@ from sound_play.msg import SoundRequest
 from vision_msgs.srv import *
 from hri_msgs.msg import *
 
-NAME = "FULL NAME"
+NAME = "Betancourt Astilla Jair"
 
 #
 # Global variable 'speech_recognized' contains the last recognized sentence
@@ -244,11 +244,18 @@ def main():
     executing_task = False
     current_state = "SM_INIT"
     new_task = False
+    goal = False 
     while not rospy.is_shutdown():
+    ##----State 0
         if current_state == "SM_INIT":
+            print("State 0: " + current_state + "\n")
             print("Waiting for new task")
+            say("Waiting for new task")
             current_state = "SM_WAITING_NEW_TASK"
+            
+    ##----State 1
         elif current_state == "SM_WAITING_NEW_TASK":
+        print("State 1: " + current_state + "\n")
             if new_task:
                 requested_object, requested_location = parse_command(recognized_speech)
                 print("New task received: " + requested_object + " to  " + str(requested_location))
@@ -257,10 +264,37 @@ def main():
                 new_task = False
                 executing_task = True
                 
+    ##----State 2
         elif current_state == "SM_MOVE_HEAD":
+            print("State 2: " + current_state + "\n")
+            say("Moving head to look at table")
             print("Moving head to look at table...")
+            rospy.sleep(3)
             move_head(0, -0.9)
-            current_state = "SM_FIND_OBJECT"
+            if (requested_object = "pringles") or (requested_object = "drink"):
+            	say("Object found")
+            	current_state = "SM_FIND_OBJECT"
+            else
+            	say("Object not found. Return to first state")
+            	print("Return to first state :(")
+		current_state == "SM_INIT":
+            
+    ##----State 3
+        elif current_state == "SM_FIND_OBJECT":
+            print("State 3: " + current_state + "\n")
+            print("Object found")
+            # Find the requested object using the vision service
+            object_pose = find_object(requested_object)
+
+		if object_pose is not None:
+		    # Update the goal location with the object's pose
+		    goal_location = object_pose
+		    current_state = "SM_NAVIGATE_TO_LOCATION"
+		else:
+		    print("Object not found")
+		    say("Object not found")
+		    current_state = "SM_INIT"
+                
         loop.sleep()
 
 if __name__ == '__main__':
