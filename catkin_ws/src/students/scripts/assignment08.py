@@ -101,11 +101,19 @@ def jacobian(q, Ti, Wi):
     #     RETURN J
     #     
     J = numpy.asarray([[0.0 for a in q] for i in range(6)])            # J 6x7 full of zeros
-    q_next = numpy.asarray([q,]*len(q)) + delta_q * numpy.identity(len(q))
-    q_prev = numpy.asarray([q,]*len(q)) - delta_q* numpy.identity(len(q))
-    for i in range(len(q)):
-        J[:,i] = (forward_kinematics(q_next[i,:], Ti, Wi) - forward_kinematics(q_prev[i,:], Ti, Wi))/(2 * delta_q)
+    q_next = numpy.asarray([[0.0 for j in range(len(q))] for i in range(len(q))])
+    q_prev = numpy.asarray([[0.0 for j in range(len(q))] for i in range(len(q))])
 
+    for i in range(len(q)):
+        q_next[i] = numpy.concatenate((q[:i],q[i] + delta_q, q[i+1:]), axis = None)
+        q_prev[i] = numpy.concatenate((q[:i],q[i] - delta_q, q[i+1:]), axis = None)
+    
+    for i in range(len(q)):
+        FK_next = forward_kinematics(q = q_next[i], Ti = Ti, Wi = Wi) # 6 x 1
+        FK_prev = forward_kinematics(q = q_prev[i], Ti = Ti, Wi = Wi) # 6 x 1
+        J_col_i = (FK_next - FK_prev) / (2 * delta_q)
+        J[:,i] = J_col_i
+    
     return J
 
 def inverse_kinematics_xyzrpy(x, y, z, roll, pitch, yaw, Ti, Wi, initial_guess):
@@ -139,14 +147,14 @@ def inverse_kinematics_xyzrpy(x, y, z, roll, pitch, yaw, Ti, Wi, initial_guess):
     q = numpy.asarray(initial_guess)  # Initial guess
     p = forward_kinematics(q = q, Ti = Ti, Wi = Wi)
     e = p - pd
-    e[3:] = ((e[3:] + math.pi) % (2 * math.pi)) - math.pi
+    e[3:] = ((e[3:] + numpy.pi) % (2 * numpy.pi)) - numpy.pi
     while numpy.linalg.norm(e) > tolerance and iterations < max_iterations:
         J = jacobian(q = q, Ti = Ti, Wi = Wi)
         q = q - numpy.dot(numpy.linalg.pinv(J), e)
-        q = ((q + math.pi) % (2 * math.pi)) - math.pi
+        q = ((q + numpy.pi) % (2 * numpy.pi)) - numpy.pi
         p = forward_kinematics(q = q, Ti = Ti, Wi = Wi)
         e = p - pd
-        e[3:] = (e[3:] + math.pi) % (2 * math.pi) - math.pi
+        e[3:] = (e[3:] + numpy.pi) % (2 * numpy.pi) - numpy.pi
         iterations += 1
 
     if iterations > max_iterations:
