@@ -101,14 +101,14 @@ def jacobian(q, Ti, Wi):
     qp = numpy.asarray([q,]*len(q)) - delta_q*numpy.identity(len(q))
 
     for i in range(len(q)):
-        J[:,i] = (forward_kinematics(qn[i], Ti, Wi) - forward_kinematics(qp[i], Ti, Wi)) / delta_q / 2.0
+        J[:,i] = (forward_kinematics(qn[i,:], Ti, Wi) - forward_kinematics(qp[i,:], Ti, Wi)) / delta_q / 2.0
     
     return J
 
 def inverse_kinematics_xyzrpy(x, y, z, roll, pitch, yaw, Ti, Wi, initial_guess):
     pd = numpy.asarray([x,y,z,roll,pitch,yaw])  # Desired configuration
-    tolerance = 0.01
-    max_iterations = 20
+    tolerance = 0.001
+    max_iterations = 100
     iterations = 0
     #
     # TODO:
@@ -145,7 +145,7 @@ def inverse_kinematics_xyzrpy(x, y, z, roll, pitch, yaw, Ti, Wi, initial_guess):
         err[3:6] = (err[3:6] + math.pi) % (2 * math.pi) - math.pi
         iterations += 1
 
-    if iterations < max_iterations:
+    if iterations <= max_iterations:
         print("InverseKinematics.->IK solved after " + str(iterations) + " iterations " + str(q))
         return q
     else:
