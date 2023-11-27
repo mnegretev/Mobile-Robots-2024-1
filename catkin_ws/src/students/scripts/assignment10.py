@@ -22,8 +22,7 @@ def main(text_to_say):
     # EJERCICIO
     # Cambie la voz por alguna de las voces instaladas
     #
-    #msg_speech.arg2    = "voice_kal_diphone"
-    msg_speech.arg2    = "voice_en1_mbrola"
+    msg_speech.arg2    = "voice_kal_diphone"
     msg_speech.arg = text_to_say
 
     loop.sleep()
@@ -35,3 +34,5 @@ if __name__ == "__main__":
     if len(sys.argv) > 1:
         text_to_say = sys.argv[1]
     main(text_to_say)
+
+#msg_speech.arg2    = "voice_en1_mbrola"
