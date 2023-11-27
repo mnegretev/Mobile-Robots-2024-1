@@ -28,9 +28,9 @@ listener    = None
 def calculate_control(robot_x, robot_y, robot_a, goal_x, goal_y):
     cmd_vel = Twist()
     alpha = 0.1
-    beta = 0.1
+    beta = 0.05
     v_max = 0.5
-    w_max = 1
+    w_max = 1.0
     num_pi = math.pi
     #
     # TODO:
