@@ -72,7 +72,7 @@ def move_left_arm(q1,q2,q3,q4,q5,q6,q7):
     msg.data.append(q6)
     msg.data.append(q7)
     pubLaGoalPose.publish(msg)
-    time.sleep(1.5)
+    time.sleep(1.0)
 
 #
 # This function sends the goal angular position to the left gripper and sleeps 1 second
@@ -98,7 +98,7 @@ def move_right_arm(q1,q2,q3,q4,q5,q6,q7):
     msg.data.append(q6)
     msg.data.append(q7)
     pubRaGoalPose.publish(msg)
-    time.sleep(2.0)
+    time.sleep(1.0)
 
 #
 # This function sends the goal angular position to the right gripper and sleeps 1 second
@@ -253,7 +253,7 @@ def take_object(object, x, y, z):
         move_left_arm(q[0]/1.5,q[1],q[2]/1.5,1.9,0.0,q[5]/2.0,0.0)
         
         move_base(0.2, 0.0, 0.8)
-        move_base(0.1, 0.0, 0.8)
+        move_base(0.1, 0.0, 0.6)
         
         move_left_arm(q[0]/1.5,q[1],q[2],1.9,0.0,q[5]/2.0,0.0)
         move_left_arm(q[0]/1.5,q[1],q[2],1.9,0.0,q[5]/1.6,q[6])
@@ -270,10 +270,10 @@ def take_object(object, x, y, z):
     else:
         move_right_arm(-1.2,-0.2,0.0,1.9,1.6,0.0,0.0) #Mover a la posicion prepare right
         print(f"({x} {y} {z})")
-        q = calculate_inverse_kinematics_right(x+0.05,y,z+0.17,0,-1.3,0)
+        q = calculate_inverse_kinematics_right(x+0.08,y,z+0.17,0,-1.3,0)
         print(f"{q[0]},{q[1]},{q[2]},{q[3]},{q[4]},{q[5]},{q[6]}")
         move_right_gripper(0.3)
-        # move_base(-0.1, 0.0, 1.0)
+        
         move_right_arm(q[0]/2.0,-0.2,0.0,1.9,1.6,0.0,0.0)
         move_right_arm(q[0]/2.0,q[1]/2.0,0.0,1.9,1.6,0.0,0.0)
         move_right_arm(q[0]/2.0,q[1]/2.0,q[2]/2.0,1.9,1.6,0.0,0.0)
@@ -282,7 +282,7 @@ def take_object(object, x, y, z):
         move_right_arm(q[0]/1.5,q[1],q[2],1.9,q[4]/2.0,0.0,0.0)
         
         move_base(0.2, 0.0, 0.8)
-        move_base(0.1, 0.0, 0.8)
+        move_base(0.1, 0.0, 1.0)
         
         move_right_arm(q[0]/1.5,q[1],q[2],1.9,q[4]/2.0,0.0,0.0)
         move_right_arm(q[0]/1.5,q[1],q[2],1.9,q[4]/1.6,0.0,q[6])
