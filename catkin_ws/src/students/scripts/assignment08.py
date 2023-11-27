@@ -20,7 +20,7 @@ from std_msgs.msg import Float64MultiArray
 from geometry_msgs.msg import PointStamped
 from manip_msgs.srv import *
 
-NAME = "FULL_NAME"
+NAME = "Villegas Lugo"
 
 def get_model_info():
     global joints, transforms
@@ -64,7 +64,8 @@ def forward_kinematics(q, Ti, Wi):
     #     Check online documentation of these functions:
     #     http://docs.ros.org/en/jade/api/tf/html/python/transformations.html
     #
-    return numpy.asarray([0,0,0,0,0,0])
+    x,y,z,R,P,Y = 0,0,0,0,0,0
+    return numpy.asarray([x,y,z,R,P,Y])
 
 def jacobian(q, Ti, Wi):
     delta_q = 0.000001
@@ -94,7 +95,7 @@ def jacobian(q, Ti, Wi):
     
     return J
 
-def inverse_kinematics_xyzrpy(x, y, z, roll, pitch, yaw, Ti, Wi, initial_guess):
+def inverse_kinematics_xyzrpy(x, y, z, roll, pitch, yaw, Ti, Wi):
     pd = numpy.asarray([x,y,z,roll,pitch,yaw])  # Desired configuration
     tolerance = 0.01
     max_iterations = 20
@@ -122,7 +123,6 @@ def inverse_kinematics_xyzrpy(x, y, z, roll, pitch, yaw, Ti, Wi, initial_guess):
     #    Return calculated q if maximum iterations were not exceeded
     #    Otherwise, return None
     #
-    q = numpy.asarray(initial_guess)  # Initial guess
     return q
 
 def callback_la_ik_for_pose(req):
