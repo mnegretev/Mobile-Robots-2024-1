@@ -18,7 +18,7 @@ from nav_msgs.srv import GetPlan, GetPlanRequest
 from navig_msgs.srv import SmoothPath, SmoothPathRequest
 from geometry_msgs.msg import Twist, PoseStamped, Pose, Point
 
-NAME = "Ruben Ortega Mendoza"
+NAME = "ORTEGA MENDOZA RUBEN"
 
 pub_goal_reached = None
 pub_cmd_vel = None
