@@ -19,6 +19,9 @@ import urdf_parser_py.urdf
 from std_msgs.msg import Float64MultiArray
 from geometry_msgs.msg import PointStamped
 from manip_msgs.srv import *
+from sound_play.msg import SoundRequest
+from vision_msgs.srv import *
+from hri_msgs.msg import *
 
 NAME = "GUILLERMO MENDOZA MOHEDANO"
 
