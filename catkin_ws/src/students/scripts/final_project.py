@@ -283,7 +283,7 @@ def main():
                 move_left_arm(0.073, 0.3, -0.03, 1.9, 0.08, -0.3, 0.06)
                 move_left_gripper(0.2)
                 move_base(0.3, 0, 3)
-                move_base(0.01, -0.2, 0.5) #incremento
+                move_base(0.01, -0.3, 0.5) #incremento
                 
                 
             else:
