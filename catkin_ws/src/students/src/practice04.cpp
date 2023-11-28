@@ -17,7 +17,7 @@
 #include "geometry_msgs/Pose2D.h"
 #include "tf/transform_broadcaster.h"
 
-#define FULL_NAME "FULL NAME"
+#define FULL_NAME "Arriaga-CAllejas"
 
 #define LASER_DOWNSAMPLING  10
 #define SENSOR_NOISE        0.1
