@@ -28,8 +28,81 @@ from geometry_msgs.msg import Twist, PoseStamped, Pose, Point, PointStamped
 from sound_play.msg import SoundRequest
 from vision_msgs.srv import *
 from hri_msgs.msg import *
+from manip_msgs.srv import *
 
-NAME = "FULL NAME"
+NAME = "Sanchez Maldonado Mario alberto"
+
+#
+# Global variable 'speech_recognized' contains the last recognized sentence
+#
+def callback_recognized_speech(msg):
+    global recognized_speech, new_task, executing_task
+    if executing_task:
+        return
+    new_task = True
+    recognized_speech = msg.hypothesis[0]
+    print("New command received: " + recognized_speech)
+
+#
+# Global variable 'goal_reached' is set True when the last sent navigation goal is reached
+#
+def callback_goal_reached(msg):
+    global goal_reached
+    goal_reached = msg.data
+    print("Received goal reached: " + str(goal_reached))
+
+def parse_command(cmd):
+    obj = "pringles" if "PRINGLES" in cmd else "drink"
+    loc = [8.0,8.5] if "TABLE" in cmd else [3.22, 9.72]
+    return obj, loc
+
+#
+# This function sends the goal articular position to the left arm and sleeps 2 seconds
+# to allow the arm to reach the goal position. 
+#
+def move_left_arm(q1,q2,q3,q4,q5,q6,q7):
+    global pubLaGoalPose
+    msg = Float64MultiArray()
+    msg.data.append(q1)
+    msg.data.append(q2)
+    msg.data.append(q3)
+    msg.data.append(q4)
+    msg.data.append(q5)
+    msg.data.append(q6)
+    msg.data.append(q7)
+    pubLaGoalPose.publis#!/usr/bin/env python3
+#
+# MOBILE ROBOTS - UNAM, FI, 2024-1
+# FINAL PROJECT - SIMPLE SERVICE ROBOT
+# 
+# Instructions:
+# Write the code necessary to make the robot to perform the following possible commands:
+# * Robot take the <pringles|drink> to the <table|kitchen>
+# You can choose where the table and kitchen are located within the map.
+# Pringles and drink are the two objects on the table used in practice 07.
+# The Robot must recognize the orders using speech recognition.
+# Entering the command by text or similar way is not allowed.
+# The Robot must announce the progress of the action using speech synthesis,
+# for example: I'm going to grab..., I'm going to navigate to ..., I arrived to..., etc.
+# Publishers and suscribers to interact with the subsystems (navigation,
+# vision, manipulation, speech synthesis and recognition) are already declared. 
+#
+
+import rospy
+import tf
+import math
+import time
+from std_msgs.msg import String, Float64MultiArray, Float64, Bool
+from nav_msgs.msg import Path
+from nav_msgs.srv import GetPlan, GetPlanRequest
+from sensor_msgs.msg import PointCloud2
+from geometry_msgs.msg import Twist, PoseStamped, Pose, Point, PointStamped
+from sound_play.msg import SoundRequest
+from vision_msgs.srv import *
+from hri_msgs.msg import *
+from manip_msgs.srv import *
+
+NAME = "ARMANDO UGALDE VELASCO"
 
 #
 # Global variable 'speech_recognized' contains the last recognized sentence
@@ -154,7 +227,7 @@ def say(text):
     msg.sound   = -3
     msg.command = 1
     msg.volume  = 1.0
-    msg.arg2    = "voice_kal_diphone"
+    msg.arg2    = "voice_don_diphone"
     msg.arg = text
     pubSay.publish(msg)
 
@@ -163,6 +236,7 @@ def say(text):
 # and returns the calculated articular position.
 #
 def calculate_inverse_kinematics_left(x,y,z,roll, pitch, yaw):
+    req_ik = InverseKinematicsPose2PoseRequest()
     req_ik.x = x
     req_ik.y = y
     req_ik.z = z
@@ -177,8 +251,8 @@ def calculate_inverse_kinematics_left(x,y,z,roll, pitch, yaw):
 # This function calls the service for calculating inverse kinematics for right arm (practice 08)
 # and returns the calculated articular position.
 #
-def calculate_inverse_kinematics_left(x,y,z,roll, pitch, yaw):
-    req_ik = InverseKinematicsRequest()
+def calculate_inverse_kinematics_right(x,y,z,roll, pitch, yaw):
+    req_ik = InverseKinematicsPose2PoseRequest()
     req_ik.x = x
     req_ik.y = y
     req_ik.z = z
@@ -187,7 +261,7 @@ def calculate_inverse_kinematics_left(x,y,z,roll, pitch, yaw):
     req_ik.yaw   = yaw
     clt = rospy.ServiceProxy("/manipulation/ra_ik_pose", InverseKinematicsPose2Pose)
     resp = clt(req_ik)
-    return [resp.q1, resp.q2, resp.q3, resp.q4, resp.q5, resp.q6, resp.q7]
+    return resp.q
 
 #
 # Calls the service for finding object (practice 08) and returns
@@ -244,23 +318,78 @@ def main():
     executing_task = False
     current_state = "SM_INIT"
     new_task = False
+    goal_reached = False
+
     while not rospy.is_shutdown():
+        print("Current state: " + current_state)
+
         if current_state == "SM_INIT":
             print("Waiting for new task")
             current_state = "SM_WAITING_NEW_TASK"
-        elif current_state == "SM_WAITING_NEW_TASK":
-            if new_task:
-                requested_object, requested_location = parse_command(recognized_speech)
-                print("New task received: " + requested_object + " to  " + str(requested_location))
-                say("Executing the command, " + recognized_speech)
-                current_state = "SM_MOVE_HEAD"
-                new_task = False
-                executing_task = True
-                
+
+        elif current_state == "SM_WAITING_NEW_TASK" and new_task:
+            requested_object, requested_location = parse_command(recognized_speech)
+            print(f"New task received: {requested_object} to {requested_location}")
+            say(f"Executing the command, {recognized_speech}")
+            current_state = "SM_MOVE_HEAD"
+            new_task, executing_task = False, True
+
         elif current_state == "SM_MOVE_HEAD":
             print("Moving head to look at table...")
             move_head(0, -0.9)
-            current_state = "SM_FIND_OBJECT"
+            current_state = "SM_APPROACH_OBJECT"
+
+        elif current_state == "SM_APPROACH_OBJECT":
+            say("Approaching object")
+            arm, arm_params, base_params = (move_left_arm, (-1.6, 0.2, 0.0, 1.8, 0.0, 1.3, 0.0), (1.0, 0.0, 3.1))
+            if requested_object != "pringles":
+                arm, arm_params, base_params = (move_right_arm, (-1.6, -0.2, 0.0, 1.7, 1.2, 0.0, 0.0), (1.0, 0.0, 3.2))
+            arm(*arm_params)
+            move_base(*base_params)
+            move_base(*(1.0, -0.1, 2.1))
+            current_state = "SM_ESTIMATE_OBJECT_POSITION"
+
+        elif current_state == "SM_ESTIMATE_OBJECT_POSITION":
+            say("Estimating object position")
+            target = "shoulders_left_link" if requested_object == "pringles" else "shoulders_right_link"
+            x, y, z = transform_point(*find_object(requested_object), "realsense_link", target)
+            current_state = "SM_TAKE_OBJECT"
+
+        elif current_state == "SM_TAKE_OBJECT":
+            say("Making arm closer to the object")
+            move_head(0.0, 0.0)
+
+            arm_params, gripper_params = (0.05, 0.3, -0.02, 2.1, 0.1, -0.35, 0.0), 0.5
+            if requested_object != "pringles":
+                arm_params, gripper_params = (0.06, -0.28, 0.18, 1.4, 0.5, 0.0, 0.0), 0.5
+            move_left_arm(*arm_params)
+            move_left_gripper(gripper_params) if requested_object == "pringles" else move_right_gripper(gripper_params)
+            say("Taking the object")
+
+            arm_params, gripper_params = (x + 0.1, y, z + 0.09, 0.0, -1.6, 0.0), -0.2
+            if requested_object != "pringles":
+                arm_params, gripper_params = (x + 0.12, y - 0.02, z + 0.09, 0.0, -1.7, 0.0), -0.2
+            q = calculate_inverse_kinematics_left(*arm_params) if requested_object == "pringles" else calculate_inverse_kinematics_right(*arm_params)
+            move_left_arm(q[0], q[1], q[2], q[3], q[4], q[5], q[6])
+            move_left_gripper(gripper_params) if requested_object == "pringles" else move_right_gripper(gripper_params)
+            say("Object taken")
+            current_state = "SM_START_FINAL_PATH"
+
+        elif current_state == "SM_START_FINAL_PATH":
+            say("Going to the specified goal.")
+            move_base(-1, 0.0, 5)
+            go_to_goal_pose(*requested_location)
+            current_state = "SM_MOVING_TO_GOAL"
+
+        elif current_state == "SM_MOVING_TO_GOAL" and goal_reached:
+            say("I've arrived, dropping the object.")
+            move_left_gripper(0.2) if requested_object == "pringles" else move_right_gripper(0.2)
+            current_state = "SM_TASK_FINISHED"
+
+        elif current_state == "SM_TASK_FINISHED":
+            current_state = "SM_INIT"
+            say("The task was completed")
+
         loop.sleep()
 
 if __name__ == '__main__':
@@ -268,4 +397,3 @@ if __name__ == '__main__':
         main()
     except rospy.ROSInterruptException:
         pass
-    

@@ -18,7 +18,15 @@ NAME = "Sanchez Maldoando Mario Alberto"
 
 class NeuralNetwork(object):
     def __init__(self, layers, weights=None, biases=None):
-
+        #
+        # The list 'layers' indicates the number of neurons in each layer.
+        # Remember that the first layer indicates the dimension of the inputs and thus,
+        # there is no bias vector fot the first layer.
+        # For this practice, 'layers' should be something like [784, n2, n3, ..., nl, 10]
+        # All weights and biases are initialized with random values. In each layer we have a matrix
+        # of weights where row j contains all the weights of the j-th neuron in that layer. For this example,
+        # the first matrix should be of order n2 x 784 and last matrix should be 10 x nl.
+        #
         self.num_layers  = len(layers)
         self.layer_sizes = layers
         self.biases =[numpy.random.randn(y,1) for y in layers[1:]] if biases == None else biases
