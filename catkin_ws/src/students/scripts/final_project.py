@@ -241,7 +241,7 @@ def main():
     #
     # FINAL PROJECT 
     #
-    executing_task = False
+    global executing_task = False
     current_state = "SM_INIT"
     new_task = False
     goal = False 
