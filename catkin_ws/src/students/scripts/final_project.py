@@ -245,6 +245,13 @@ def main():
     current_state = "SM_INIT"
     new_task = False
     goal = False 
+    
+    global initial_location
+    global goal_location
+    global object_name
+    global current_location
+    initial_location = (0.0, 0.0)
+    
     while not rospy.is_shutdown():
     ##----State 0
         if current_state == "SM_INIT":
@@ -294,7 +301,98 @@ def main():
 		    print("Object not found")
 		    say("Object not found")
 		    current_state = "SM_INIT"
-                
+		    
+	##----State 4
+	elif current_state == "SM_NAVIGATE_TO_LOCATION":
+	    print("State 4: " + current_state + "\n")
+	    print("Navigating to goal location")
+
+	    if new_task:
+		object_name, new_goal_location = parse_command(recognized_speech)
+		new_task = False
+		goal_location = new_goal_location
+
+	    if goal_location != current_location:
+		executing_task = True
+
+		go_to_goal_pose(goal_location)
+
+		while not goal_reached:
+		    pass
+
+		executing_task = False
+		current_state = "SM_GRASP_OBJECT"
+	    else:
+		print("Goal location not updated")
+		current_state = "SM_INIT"
+		
+	##----State 5
+	elif current_state == "SM_GRASP_OBJECT":
+	    print("State 5: " + current_state + "\n")
+	    print("Grasping object")
+
+	    if is_object_within_reach(object_name):
+		executing_task = True
+
+		grasp_object(object_name)
+
+		while not object_grasped:
+		    pass
+
+		executing_task = False
+		current_state = "SM_TRANSPORT_OBJECT"
+	    else:
+		print("Object not within reach")
+		current_state = "SM_INIT"
+		
+	##----State 6
+	elif current_state == "SM_TRANSPORT_OBJECT":
+	    print("State 6: " + current_state + "\n")
+	    print("Transporting object")
+
+	    if not object_grasped:
+		current_state = "SM_INIT"
+		return
+
+	    transport_object(object_name)
+
+	    while not object_transported:
+		pass
+
+	    executing_task = False
+	    current_state = "SM_RELEASE_OBJECT"
+	    
+	##----State 7
+	elif current_state == "SM_RELEASE_OBJECT":
+	    print("State 7: " + current_state + "\n")
+	    print("Releasing object")
+
+	    if not object_grasped:
+		current_state = "SM_INIT"
+		return
+
+	    release_object(object_name)
+
+	    while object_grasped:
+		pass
+
+	    executing_task = False
+	    current_state = "SM_RETURN_TO_INIT"
+		     
+	##----State 8
+	elif current_state == "SM_RETURN_TO_INIT":
+	    print("State 8: " + current_state + "\n")
+	    print("Returning to initial position")
+	    say("Returning to initial position")
+
+	    go_to_goal_pose(initial_location)
+
+	    while current_location != initial_location:
+		pass
+
+	    executing_task = False
+	    current_state = "SM_INIT"   
+	    
         loop.sleep()
 
 if __name__ == '__main__':
@@ -303,3 +401,4 @@ if __name__ == '__main__':
     except rospy.ROSInterruptException:
         pass
     
+
