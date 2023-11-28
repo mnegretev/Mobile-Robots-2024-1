@@ -262,14 +262,14 @@ def main():
             
     ##----State 1
         elif current_state == "SM_WAITING_NEW_TASK":
-        print("State 1: " + current_state + "\n")
-            if new_task:
-                requested_object, requested_location = parse_command(recognized_speech)
-                print("New task received: " + requested_object + " to  " + str(requested_location))
-                say("Executing the command, " + recognized_speech)
-                current_state = "SM_MOVE_HEAD"
-                new_task = False
-                executing_task = True
+            print("State 1: " + current_state + "\n")
+	if new_task:
+		requested_object, requested_location = parse_command(recognized_speech)
+		print("New task received: " + requested_object + " to  " + str(requested_location))
+		say("Executing the command, " + recognized_speech)
+		current_state = "SM_MOVE_HEAD"
+		new_task = False
+		executing_task = True
                 
     ##----State 2
         elif current_state == "SM_MOVE_HEAD":
