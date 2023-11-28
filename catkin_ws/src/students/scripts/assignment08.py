@@ -102,7 +102,7 @@ def jacobian(q, Ti, Wi):
     #     
     J = numpy.asarray([[0.0 for a in q] for i in range(6)])            # J 6x7 full of zeros
     
-    return J
+    #return J
     # Create arrays for q_next and q_prev
     q_next = numpy.tile(q, (len(q), 1)) + numpy.eye(len(q)) * delta_q
     q_prev = numpy.tile(q, (len(q), 1)) - numpy.eye(len(q)) * delta_q
