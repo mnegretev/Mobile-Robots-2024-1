@@ -20,7 +20,7 @@ from std_msgs.msg import Float64MultiArray
 from geometry_msgs.msg import PointStamped
 from manip_msgs.srv import *
 
-NAME = "FULL_NAME"
+NAME = "González Chávez Cesar de Jesús"
 
 def get_model_info():
     global joints, transforms
@@ -64,6 +64,15 @@ def forward_kinematics(q, Ti, Wi):
     #     Check online documentation of these functions:
     #     http://docs.ros.org/en/jade/api/tf/html/python/transformations.html
     #
+    H = tft.identity_matrix()
+    for i, qi in enumerate(q):
+        Ri = tft.rotation_matrix(angle = qi, direction = Wi[i])
+        H = tft.concatenate_matrices(H, Ti[i], Ri)
+    H = tft.concatenate_matrices(H, Ti[7])
+    x = H[0, 3]
+    y = H[1, 3]
+    z = H[2, 3]
+    R, P, Y = tft.euler_from_matrix(H)
     return numpy.asarray([0,0,0,0,0,0])
 
 def jacobian(q, Ti, Wi):
@@ -91,7 +100,10 @@ def jacobian(q, Ti, Wi):
     #     RETURN J
     #     
     J = numpy.asarray([[0.0 for a in q] for i in range(6)])            # J 6x7 full of zeros
-    
+    q_next = numpy.asarray([q,]*len(q)) + delta_q * numpy.identity(len(q))
+    q_prev = numpy.asarray([q,]*len(q)) - delta_q * numpy.identity(len(q))
+    for i in range(len(q)):
+        J[:,i] = (forward_kinematics(q_next[i,:], Ti, Wi) - forward_kinematics(q_prev[i,:], Ti, Wi)) / (2 * delta_q)
     return J
 
 def inverse_kinematics_xyzrpy(x, y, z, roll, pitch, yaw, Ti, Wi, initial_guess):
@@ -123,6 +135,20 @@ def inverse_kinematics_xyzrpy(x, y, z, roll, pitch, yaw, Ti, Wi, initial_guess):
     #    Otherwise, return None
     #
     q = numpy.asarray(initial_guess)  # Initial guess
+    p = forward_kinematics(q = q, Ti = Ti, Wi = Wi)
+    e = p - pd
+    e[3:] = ((e[3:] + math.pi) % (2 * math.pi)) - math.pi
+    while numpy.linalg.norm(e) > tolerance and iterations < max_iterations:
+        J = jacobian(q = q, Ti = Ti, Wi = Wi)
+        q = q - numpy.dot(numpy.linalg.pinv(J), e)
+        q = ((q + math.pi) % (2 * math.pi)) - math.pi
+        p = forward_kinematics(q = q, Ti = Ti, Wi = Wi)
+        e = p - pd
+        e[3:] = (e[3:] + math.pi) % (2 * math.pi) - math.pi
+        iterations += 1
+    if iterations > max_iterations:
+        print("No se pudo calcular la cinemática inversa")
+        return None
     return q
 
 def callback_la_ik_for_pose(req):
