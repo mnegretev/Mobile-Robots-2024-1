@@ -102,7 +102,7 @@ from vision_msgs.srv import *
 from hri_msgs.msg import *
 from manip_msgs.srv import *
 
-NAME = "ARMANDO UGALDE VELASCO"
+NAME = "Sanchez Maldoando Mario Alberto"
 
 #
 # Global variable 'speech_recognized' contains the last recognized sentence
