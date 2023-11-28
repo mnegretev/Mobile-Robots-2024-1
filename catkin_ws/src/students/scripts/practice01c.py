@@ -50,13 +50,9 @@ def brushfire(grid_map):
         for k1, k2 in offsets_8:
             if distances[i+k1, j+k2] == -1:
                 Q.put([i+k1, j+k2])
-                #distances[i+k1, j+k2] = d + 2
-                distances[i+k1, j+k2] = d + math.sqrt(2.0)
                 distances[i+k1, j+k2] = d + 2
                 #distances[i+k1, j+k2] = d + math.sqrt(2.0)
             else:
-                #distances[i+k1, j+k2] = min(distances[i+k1, j+k2], d+ 2)
-                distances[i+k1, j+k2] = min(distances[i+k1, j+k2], d+ math.sqrt(2.0))
                 distances[i+k1, j+k2] = min(distances[i+k1, j+k2], d+ 2)
                 #distances[i+k1, j+k2] = min(distances[i+k1, j+k2], d+ math.sqrt(2.0))
     return distances
@@ -116,3 +112,4 @@ if __name__ == '__main__':
     except rospy.ROSInterruptException:
         pass
     
+
