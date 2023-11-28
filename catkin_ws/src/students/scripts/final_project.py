@@ -29,7 +29,7 @@ from sound_play.msg import SoundRequest
 from vision_msgs.srv import *
 from hri_msgs.msg import *
 
-NAME = "FULL NAME"
+NAME = "Rodríguez Jiménez Bruno A"
 
 #
 # Global variable 'speech_recognized' contains the last recognized sentence
