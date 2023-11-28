@@ -190,7 +190,7 @@ def calculate_inverse_kinematics_right(x,y,z,roll, pitch, yaw):
     req_ik.yaw   = yaw
     clt = rospy.ServiceProxy("/manipulation/ra_ik_pose", InverseKinematicsPose2Pose)
     resp = clt(req_ik)
-    return [resp.q1, resp.q2, resp.q3, resp.q4, resp.q5, resp.q6, resp.q7]
+    return resp.q
 
 #
 # Calls the service for finding object (practice 08) and returns
@@ -301,10 +301,6 @@ def main():
             move_base(-0.5, 0, 5)
             goal_reached = False 
             state = "SM_MOVE_GOAL"
-            if table:
-               
-            else:
-                
         elif state == "SM_MOVE_GOAL":    
             go_to_goal_pose(loc[0],loc[1])
             state="SM_WAIT"
