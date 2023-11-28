@@ -20,7 +20,7 @@ from std_msgs.msg import Float64MultiArray
 from geometry_msgs.msg import PointStamped
 from manip_msgs.srv import *
 
-NAME = "FULL_NAME"
+NAME = "ORTEGA MENDOZA RUBEN"
 
 def get_model_info():
     global joints, transforms
@@ -64,7 +64,16 @@ def forward_kinematics(q, Ti, Wi):
     #     Check online documentation of these functions:
     #     http://docs.ros.org/en/jade/api/tf/html/python/transformations.html
     #
-    return numpy.asarray([0,0,0,0,0,0])
+    H = tft.identity_matrix()  # Assign to H a 4x4 identity matrix
+    
+    for i, qi in enumerate(q):
+        Ri = tft.rotation_matrix(qi, Wi[i])  # Rotation matrices Ri
+        H = tft.concatenate_matrices(H, tft.concatenate_matrices(Ti[i], Ri))  # Multiplica H con Ti y Ri
+    
+    H = tft.concatenate_matrices(H, Ti[7])  # Multiplica H por Ti[7]
+    xyzrpy = tft.euler_from_matrix(H, 'sxyz')#[:3]# Get xyzRPY from the resulting Homogeneous Transformation 'H'
+    #print("syzrpy " +str(xyzrpy))
+    return numpy.asarray([H[0,3], H[1,3], H[2,3], xyzrpy[0], xyzrpy[1], xyzrpy[2]])
 
 def jacobian(q, Ti, Wi):
     delta_q = 0.000001
@@ -92,6 +101,20 @@ def jacobian(q, Ti, Wi):
     #     
     J = numpy.asarray([[0.0 for a in q] for i in range(6)])            # J 6x7 full of zeros
     
+    return J
+    # Create arrays for q_next and q_prev
+    q_next = numpy.tile(q, (len(q), 1)) + numpy.eye(len(q)) * delta_q
+    q_prev = numpy.tile(q, (len(q), 1)) - numpy.eye(len(q)) * delta_q
+
+    # Calculate the Jacobian using finite differences for each joint
+    for i in range(len(q)):
+        # Compute forward kinematics for q_next and q_prev
+        fk_next = forward_kinematics(q_next[i], Ti, Wi)
+        fk_prev = forward_kinematics(q_prev[i], Ti, Wi)
+
+        # Calculate the i-th column of the Jacobian
+        J[:, i] = (fk_next - fk_prev) / (2 * delta_q)
+
     return J
 
 def inverse_kinematics_xyzrpy(x, y, z, roll, pitch, yaw, Ti, Wi, initial_guess):
@@ -123,7 +146,33 @@ def inverse_kinematics_xyzrpy(x, y, z, roll, pitch, yaw, Ti, Wi, initial_guess):
     #    Otherwise, return None
     #
     q = numpy.asarray(initial_guess)  # Initial guess
-    return q
+    #return q
+    while iterations < max_iterations:
+        p = forward_kinematics(q)
+        error = p - pd
+        
+        # Asegurar que los ángulos de orientación del error estén en el rango [-pi, pi]
+        error[3:6] = ((error[3:6] + numpy.pi) % (2 * numpy.pi)) - numpy.pi
+        
+        if numpy.linalg.norm(error) < tolerance:
+            return q
+
+        J = jacobian(q)
+        J_pseudo_inv = numpy.linalg.pinv(J)
+        q = q - numpy.dot(J_pseudo_inv, error)
+        
+        # Asegurar que todos los ángulos q estén en el rango [-pi, pi]
+        q = ((q + numpy.pi) % (2 * numpy.pi)) - numpy.pi
+        
+        p = forward_kinematics(q)
+        error = p - pd
+        
+        # Asegurar que los ángulos de orientación del error estén en el rango [-pi, pi]
+        error[3:6] = ((error[3:6] + numpy.pi) % (2 * numpy.pi)) - numpy.pi
+
+        iterations += 1
+
+    return None  # Devolver None si se excede el número máximo de iteraciones
 
 def callback_la_ik_for_pose(req):
     global transforms, joints

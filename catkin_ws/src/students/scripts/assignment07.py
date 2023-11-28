@@ -19,7 +19,7 @@ from geometry_msgs.msg import PointStamped, Point
 from vision_msgs.srv import RecognizeObject, RecognizeObjectResponse
 from vision_msgs.msg import VisionObject
 
-NAME = "FULL_NAME"
+NAME = "ORTEGA MENDOZA RUBEN"
 
 def segment_by_color(img_bgr, points, obj_name):
     #
@@ -52,9 +52,9 @@ def segment_by_color(img_bgr, points, obj_name):
     mask = cv2.inRange(img_hsv, lower_color_limit, upper_color_limit)
     nonzero_points = cv2.findNonZero(mask)
     if nonzero_points is not None:
-        centroid = np.mean(nonzero_points, axis=0, dtype=np.int)
-        centroid_x = centroid[0][0]
-        centroid_y = centroid[0][1]
+        centroid = cv2.mean(nonzero_points)
+        centroid_x = int(centroid[0])
+        centroid_y = int(centroid[1])
         if centroid_x < points.shape[1] and centroid_y < points.shape[0]:
             centroid_cartesian_x = points[centroid_y, centroid_x][0]
             centroid_cartesian_y = points[centroid_y, centroid_x][1]
