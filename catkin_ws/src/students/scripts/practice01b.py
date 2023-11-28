@@ -17,7 +17,6 @@ from sensor_msgs.msg   import LaserScan
 from geometry_msgs.msg import Twist, Point
 from visualization_msgs.msg import Marker
 
-NAME = "FULL NAME"
 NAME = "Romero Trujillo Jerson Gerardo"
 
 def adjust_line(points):
@@ -145,4 +144,5 @@ if __name__ == '__main__':
         main()
     except rospy.ROSInterruptException:
         pass
+    
     
