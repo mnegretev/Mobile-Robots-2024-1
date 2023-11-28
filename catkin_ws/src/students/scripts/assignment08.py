@@ -14,7 +14,7 @@ import math
 import rospy
 import tf
 import tf.transformations as tft
-import numpy
+import numpy as np
 import urdf_parser_py.urdf
 from std_msgs.msg import Float64MultiArray
 from geometry_msgs.msg import PointStamped
@@ -64,7 +64,25 @@ def forward_kinematics(q, Ti, Wi):
     #     Check online documentation of these functions:
     #     http://docs.ros.org/en/jade/api/tf/html/python/transformations.html
     #
-    return numpy.asarray([0,0,0,0,0,0])
+
+    #Inicializando la matriz de transformacion homogenea
+    H = tft.identity_matrix()
+
+    # Bucle a través de cada ángulo de articulación
+    for i in range(len(q)):
+        # Calculando la matriz de rotación para la articulación i.
+        Ri = tft.rotation_matrix(q[i], Wi[i])
+
+        # Actualizando la matriz de transformación homogénea.
+        H = np.dot(H, np.dot(Ti[i], Ri))
+
+    # Multiplicando por la transformación final desde el centro de la pinza hasta la articulación 7
+    H = np.dot(H, Ti[7])
+
+    # Extrayendo la posición y orientación (RPY) de la matriz de transformación homogénea resultante
+    xyzRPY = tft.euler_from_matrix(H)
+
+    return np.concatenate((np.asarray(H[:3, 3]), xyzRPY))
 
 def jacobian(q, Ti, Wi):
     delta_q = 0.000001
@@ -90,12 +108,31 @@ def jacobian(q, Ti, Wi):
     #           i-th column of J = ( FK(i-th row of q_next) - FK(i-th row of q_prev) ) / (2*delta_q)
     #     RETURN J
     #     
-    J = numpy.asarray([[0.0 for a in q] for i in range(6)])            # J 6x7 full of zeros
+    J = np.zeros((6, len(q)))
+
+    for i in range(len(q)):
+        # Perturb joint i by delta_q
+        q_next = np.array(q)
+        q_next[i] += delta_q
+
+        # Cinemática directa para ángulos articulares perturbados.
+        p_next = forward_kinematics(q_next, Ti, Wi)
+
+        # Perturbando la articulación i por -delta_q
+        q_prev = np.array(q)
+        q_prev[i] -= delta_q
+
+        # Cinemática directa para ángulos articulares perturbados.
+        p_prev = forward_kinematics(q_prev, Ti, Wi)
+
+        # Calculando la columna del jacobiano usando diferencias finitas.
+        J[:, i] = (p_next - p_prev) / (2 * delta_q)
+
     
     return J
 
 def inverse_kinematics_xyzrpy(x, y, z, roll, pitch, yaw, Ti, Wi, initial_guess):
-    pd = numpy.asarray([x,y,z,roll,pitch,yaw])  # Desired configuration
+    pd = np.array([x, y, z, roll, pitch, yaw])
     tolerance = 0.01
     max_iterations = 20
     iterations = 0
@@ -122,8 +159,36 @@ def inverse_kinematics_xyzrpy(x, y, z, roll, pitch, yaw, Ti, Wi, initial_guess):
     #    Return calculated q if maximum iterations were not exceeded
     #    Otherwise, return None
     #
-    q = numpy.asarray(initial_guess)  # Initial guess
-    return q
+
+    q = np.array(initial_guess)
+
+    while iterations < max_iterations:
+        # Calculate Forward Kinematics
+        p = forward_kinematics(q, Ti, Wi)
+
+        # Calculando error
+        error = pd - p[:6]  # Considerando solo posición y orientación (RPY)
+
+        # Asegurando que los ángulos de orientación del error estén en [-pi, pi]
+        error[3:] = np.arctan2(np.sin(error[3:]), np.cos(error[3:]))
+
+        # Comprobando si el error está dentro de la tolerancia.
+        if np.linalg.norm(error) < tolerance:
+            return q
+
+        # Calculando jacobiano
+        J = jacobian(q, Ti, Wi)
+
+        # Actualizando la estimación de q con q = q - pseudo_inverse(J) * error
+        q = q + np.dot(np.linalg.pinv(J), error)
+
+        # Asegurando que todos los ángulos q estén en [-pi, pi]
+        q = np.mod(q + np.pi, 2 * np.pi) - np.pi
+
+        iterations += 1
+
+
+    return None
 
 def callback_la_ik_for_pose(req):
     global transforms, joints
@@ -164,7 +229,12 @@ def callback_ra_fk(req):
     Wi = [joints['right'][i].axis for i in range(len(joints['right']))]  
     x = forward_kinematics([req.q[0], req.q[1], req.q[2], req.q[3], req.q[4], req.q[5], req.q[6]], Ti, Wi)
     resp = ForwardKinematicsResponse()
-    [resp.x, resp.y, resp.z, resp.roll, resp.pitch, resp.yaw] = x
+    resp.x = x[0]
+    resp.y = x[1]
+    resp.z = x[2]
+    resp.roll = x[3]
+    resp.pitch = x[4]
+    resp.yaw = x[5]
     return resp
 
 def main():
