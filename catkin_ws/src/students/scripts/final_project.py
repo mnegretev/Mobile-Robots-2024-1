@@ -28,6 +28,7 @@ from geometry_msgs.msg import Twist, PoseStamped, Pose, Point, PointStamped
 from sound_play.msg import SoundRequest
 from vision_msgs.srv import *
 from hri_msgs.msg import *
+from manip_msgs.srv import *
 
 NAME = "ROLDAN LANDA MEIR JOSHUA"
 
@@ -154,7 +155,7 @@ def say(text):
     msg.sound   = -3
     msg.command = 1
     msg.volume  = 1.0
-    msg.arg2    = "voice_kal_diphone"
+    msg.arg2    = "voice_don_diphone"
     msg.arg = text
     pubSay.publish(msg)
 
@@ -177,8 +178,8 @@ def calculate_inverse_kinematics_left(x,y,z,roll, pitch, yaw):
 # This function calls the service for calculating inverse kinematics for right arm (practice 08)
 # and returns the calculated articular position.
 #
-def calculate_inverse_kinematics_left(x,y,z,roll, pitch, yaw):
-    req_ik = InverseKinematicsRequest()
+def calculate_inverse_kinematics_right(x,y,z,roll, pitch, yaw):
+    req_ik = InverseKinematicsPose2PoseRequest()
     req_ik.x = x
     req_ik.y = y
     req_ik.z = z
@@ -187,7 +188,23 @@ def calculate_inverse_kinematics_left(x,y,z,roll, pitch, yaw):
     req_ik.yaw   = yaw
     clt = rospy.ServiceProxy("/manipulation/ra_ik_pose", InverseKinematicsPose2Pose)
     resp = clt(req_ik)
-    return [resp.q1, resp.q2, resp.q3, resp.q4, resp.q5, resp.q6, resp.q7]
+    return resp.q
+
+#
+# This function calls the service for calculating inverse kinematics for right arm (practice 08)
+# and returns the calculated articular position.
+#
+def calculate_inverse_kinematics_left(x,y,z,roll, pitch, yaw):
+    req_ik = InverseKinematicsPose2PoseRequest()
+    req_ik.x = x
+    req_ik.y = y
+    req_ik.z = z
+    req_ik.roll  = roll
+    req_ik.pitch = pitch
+    req_ik.yaw   = yaw
+    clt = rospy.ServiceProxy("/manipulation/ra_ik_pose", InverseKinematicsPose2Pose)
+    resp = clt(req_ik)
+    return resp.q
 
 #
 # Calls the service for finding object (practice 08) and returns
