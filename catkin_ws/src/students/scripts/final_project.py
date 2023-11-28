@@ -29,7 +29,7 @@ from sound_play.msg import SoundRequest
 from vision_msgs.srv import *
 from hri_msgs.msg import *
 
-NAME = "FULL NAME"
+NAME = "ROLDAN LANDA MEIR JOSHUA"
 
 #
 # Global variable 'speech_recognized' contains the last recognized sentence
@@ -244,23 +244,77 @@ def main():
     executing_task = False
     current_state = "SM_INIT"
     new_task = False
+    goal_reached = False
+
     while not rospy.is_shutdown():
+        print("Current state: " + current_state)
+
         if current_state == "SM_INIT":
             print("Waiting for new task")
             current_state = "SM_WAITING_NEW_TASK"
-        elif current_state == "SM_WAITING_NEW_TASK":
-            if new_task:
-                requested_object, requested_location = parse_command(recognized_speech)
-                print("New task received: " + requested_object + " to  " + str(requested_location))
-                say("Executing the command, " + recognized_speech)
-                current_state = "SM_MOVE_HEAD"
-                new_task = False
-                executing_task = True
-                
+
+        elif current_state == "SM_WAITING_NEW_TASK" and new_task:
+            requested_object, requested_location = parse_command(recognized_speech)
+            print(f"New task received: {requested_object} to {requested_location}")
+            say(f"Executing the command, {recognized_speech}")
+            current_state = "SM_MOVE_HEAD"
+            new_task, executing_task = False, True
+
         elif current_state == "SM_MOVE_HEAD":
-            print("Moving head to look at table...")
             move_head(0, -0.9)
-            current_state = "SM_FIND_OBJECT"
+            current_state = "SM_APPROACHING_TARGET"
+
+        elif current_state == "SM_APPROACHING_TARGET":
+            say("Approaching object")
+            arm, arm_params, base_params = (move_left_arm, (-1.6, 0.2, 0.0, 1.8, 0.0, 1.3, 0.0), (1.0, 0.0, 3.1))
+            if requested_object != "pringles":
+                arm, arm_params, base_params = (move_right_arm, (-1.6, -0.2, 0.0, 1.7, 1.2, 0.0, 0.0), (1.0, 0.0, 3.2))
+            arm(*arm_params)
+            move_base(*base_params)
+            move_base(*(1.0, -0.1, 2.1))
+            current_state = "SM_DETERMINE_OBJECT_LOCATION"
+
+        elif current_state == "SM_DETERMINE_OBJECT_LOCATION":
+            say("getting object position")
+            target = "shoulders_left_link" if requested_object == "pringles" else "shoulders_right_link"
+            x, y, z = transform_point(*find_object(requested_object), "realsense_link", target)
+            current_state = "SM_TAKE_OBJECT"
+
+        elif current_state == "SM_TAKE_OBJECT":
+            say("Making arm closer to the object")
+            move_head(0.0, 0.0)
+
+            arm_params, gripper_params = (0.05, 0.3, -0.02, 2.1, 0.1, -0.35, 0.0), 0.5
+            if requested_object != "pringles":
+                arm_params, gripper_params = (0.06, -0.28, 0.18, 1.4, 0.5, 0.0, 0.0), 0.5
+            move_left_arm(*arm_params)
+            move_left_gripper(gripper_params) if requested_object == "pringles" else move_right_gripper(gripper_params)
+            say("Taking the object")
+
+            arm_params, gripper_params = (x + 0.2, y - 0.05, z + 0.12, 0.1, -1.8, 0.2), -0.3
+            if requested_object != "pringles":
+                arm_params, gripper_params = (x + 0.15, y - 0.03, z + 0.11, 0.1, -1.8, 0.05), -0.3
+            q = calculate_inverse_kinematics_left(*arm_params) if requested_object == "pringles" else calculate_inverse_kinematics_right(*arm_params)
+            move_left_arm(q[0], q[1], q[2], q[3], q[4], q[5], q[6])
+            move_left_gripper(gripper_params) if requested_object == "pringles" else move_right_gripper(gripper_params)
+            say("Object taken")
+            current_state = "SM_START_FINAL_PATH"
+
+        elif current_state == "SM_START_FINAL_PATH":
+            say("Going to final path.")
+            move_base(-1, 0.0, 5)
+            go_to_goal_pose(*requested_location)
+            current_state = "SM_FINAL_STEP"
+
+        elif current_state == "SM_FINAL_STEP" and goal_reached:
+            say("letting go of the item")
+            move_left_gripper(0.2) if requested_object == "pringles" else move_right_gripper(0.2)
+            current_state = "SM_TASK_FINISHED"
+
+        elif current_state == "SM_TASK_FINISHED":
+            current_state = "SM_INIT"
+            say("Task was completed")
+
         loop.sleep()
 
 if __name__ == '__main__':
