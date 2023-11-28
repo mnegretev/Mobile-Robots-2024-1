@@ -22,7 +22,8 @@ def main(text_to_say):
     # EJERCICIO
     # Cambie la voz por alguna de las voces instaladas
     #
-    msg_speech.arg2    = "voice_kal_diphone"
+    msg_speech.arg2    = "voice_upc_ca_ona_hts"
+    # upc_ca_ona_hts corresponde a atalan female speaker for festival, 16kHz HTS
     msg_speech.arg = text_to_say
 
     loop.sleep()
