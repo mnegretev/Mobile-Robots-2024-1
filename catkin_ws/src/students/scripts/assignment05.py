@@ -25,28 +25,31 @@ pub_cmd_vel = None
 loop        = None
 listener    = None
 
-
-# Constantes de control
-v_max = 0.5  # Velocidad lineal máxima
-w_max = 1.0  # Velocidad angular máxima
-alpha = 0.5  # Constante alpha
-beta = 0.5   # Constante beta
-
 def calculate_control(robot_x, robot_y, robot_a, goal_x, goal_y):
     cmd_vel = Twist()
-
-    # Para calcular el error en el ángulo
+    
+    #
+    # TODO:
+    # Implement the control law given by:
+    #
+    v_max = 0.5
+    w_max = 1.0
+    alpha = 0.2
+    beta = 0.4
     error_a = math.atan2(goal_y - robot_y, goal_x - robot_x) - robot_a
-    error_a = math.atan2(math.sin(error_a), math.cos(error_a))  # Mantener el error en el rango (-pi, pi]
-
-
-    # Calculo de velocidad lineal y angular
+    error_a = (error_a + math.pi) % (2 * math.pi) - math.pi
     v = v_max*math.exp(-error_a*error_a/alpha)
     w = w_max*(2/(1 + math.exp(-error_a/beta)) - 1)
-
     cmd_vel.linear.x = v
     cmd_vel.angular.z = w
-    
+    #
+    # where error_a is the angle error and
+    # v and w are the linear and angular speeds taken as input signals
+    # and v_max, w_max, alpha and beta, are tunning constants.
+    # Store the resulting v and w in the Twist message cmd_vel
+    # and return it (check online documentation for the Twist message).
+    # Remember to keep error angle in the interval (-pi,pi]
+    #
     
     return cmd_vel
 
