@@ -19,27 +19,34 @@ from geometry_msgs.msg import PointStamped, Point
 from vision_msgs.srv import RecognizeObject, RecognizeObjectResponse
 from vision_msgs.msg import VisionObject
 
-NAME = "FULL_NAME"
+NAME = "JARQUIN LOPEZ DANIEL EDUARDO"
 
 def segment_by_color(img_bgr, points, obj_name):
-    #
-    # TODO:
-    # - Assign lower and upper color limits according to the requested object:
-    #   If obj_name == 'pringles': [25, 50, 50] - [35, 255, 255]
-    #   otherwise                : [10,200, 50] - [20, 255, 255]
-    # - Change color space from RGB to HSV.
-    #   Check online documentation for cv2.cvtColor function
-    # - Determine the pixels whose color is in the selected color range.
-    #   Check online documentation for cv2.inRange
-    # - Calculate the centroid of all pixels in the given color range (ball position).
-    #   Check online documentation for cv2.findNonZero and cv2.mean
-    # - Calculate the centroid of the segmented region in the cartesian space
-    #   using the point cloud 'points'. Use numpy array notation to process the point cloud data.
-    #   Example: 'points[240,320][1]' gets the 'y' value of the point corresponding to
-    #   the pixel in the center of the image.
-    #
-    
-    return [0,0,0,0,0]
+    if obj_name == 'pringles':
+        # Color range for 'pringles' object in HSV
+        lower_color = numpy.array([25, 50, 50])
+        upper_color = numpy.array([35, 255, 255])
+    else:
+        # Color range for other objects in HSV
+        lower_color = numpy.array([10, 200, 50])
+        upper_color = numpy.array([20, 255, 255])
+
+    img_hsv = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2HSV)
+
+    mask = cv2.inRange(img_hsv, lower_color, upper_color)
+
+    nonzero_points = cv2.findNonZero(mask)
+    if nonzero_points is not None:
+        centroid = cv2.mean(nonzero_points)
+        r, c = centroid[0], centroid[1]
+    else:
+        return [0, 0, 0, 0, 0]
+
+    x = points[int(r), int(c)][0]
+    y = points[int(r), int(c)][1]
+    z = points[int(r), int(c)][2]
+
+    return [r, c, x, y, z]
 
 def callback_find_object(req):
     global pub_point, img_bgr
