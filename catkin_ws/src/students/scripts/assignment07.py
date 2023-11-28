@@ -21,45 +21,27 @@ from vision_msgs.msg import VisionObject
 
 NAME = "Guillen Castillo Jorge Luis"
 
-# Límites de color para "pringles"
-H_MIN_PRINGLES, S_MIN_PRINGLES, V_MIN_PRINGLES = 25, 50, 50
-H_MAX_PRINGLES, S_MAX_PRINGLES, V_MAX_PRINGLES = 35, 255, 255
-
-# Límites de color para "drink"
-H_MIN_DRINK, S_MIN_DRINK, V_MIN_DRINK = 10, 200, 50
-H_MAX_DRINK, S_MAX_DRINK, V_MAX_DRINK = 20, 255, 255
-
 def segment_by_color(img_bgr, points, obj_name):
-    # Límites de color según el objeto solicitado
-    if obj_name == 'pringles':
-        lower_color_limit = numpy.array([H_MIN_PRINGLES, S_MIN_PRINGLES, V_MIN_PRINGLES])
-        upper_color_limit = numpy.array([H_MAX_PRINGLES, S_MAX_PRINGLES, V_MAX_PRINGLES])
-    elif obj_name == 'drink':
-        lower_color_limit = numpy.array([H_MIN_DRINK, S_MIN_DRINK, V_MIN_DRINK])
-        upper_color_limit = numpy.array([H_MAX_DRINK, S_MAX_DRINK, V_MAX_DRINK])
-    else:
-        # Límites de color predeterminados
-        lower_color_limit = numpy.array([20, 100, 100])
-        upper_color_limit = numpy.array([30, 255, 255])
 
-    # Transformar la imagen del espacio BGR al espacio HSV
-    img_hsv = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2HSV)
-
-    # Determinar los píxeles de la imagen que pertenecen al rango de color elegido
-    mask = cv2.inRange(img_hsv, lower_color_limit, upper_color_limit)
-
-    # Encontrar los índices de los píxeles que pertenecen al rango de color
-    nonzero = cv2.findNonZero(mask)
-
-    if nonzero is not None:
-        # Utilizando los índices y la nube de puntos, determinar el centroide del objeto
-        mean_val = cv2.mean(nonzero)
-        r, c = int(mean_val[1]), int(mean_val[0])
-        x, y, z = points[r, c]
-
-        return [r, c, x, y, z]
-
-    return [0, 0, 0, 0, 0]
+    
+    hsv_lower_limit = numpy.array([25, 50, 50]) if obj_name == "pringles" else numpy.array([10, 200, 50])
+    hsv_upper_limit = numpy.array([35, 255, 255]) if obj_name == "pringles" else numpy.array([20, 255, 255])
+    
+    hsv_img = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2HSV)
+    
+    bin_img = cv2.inRange(hsv_img, hsv_lower_limit, hsv_upper_limit)
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT,(5,5))
+    bin_img = cv2.morphologyEx(bin_img, cv2.MORPH_OPEN, kernel)
+    
+    nonzero_elements = cv2.findNonZero(bin_img)
+    centroid_px = cv2.mean(nonzero_elements)
+    px_x, px_y = int(centroid_px[0]), int(centroid_px[1])
+     
+    x = points[px_y, px_x][0]
+    y = points[px_y, px_x][1]
+    z = points[px_y, px_x][2]
+    
+    return [px_x,px_y,x,y,z]
 
 def callback_find_object(req):
     global pub_point, img_bgr
@@ -67,8 +49,8 @@ def callback_find_object(req):
     arr = ros_numpy.point_cloud2.pointcloud2_to_array(req.point_cloud)
     rgb_arr = arr['rgb'].copy()
     rgb_arr.dtype = numpy.uint32
-    r, g, b = ((rgb_arr >> 16) & 255), ((rgb_arr >> 8) & 255), (rgb_arr & 255)
-    img_bgr = cv2.merge((numpy.asarray(b, dtype='uint8'), numpy.asarray(g, dtype='uint8'), numpy.asarray(r, dtype='uint8')))
+    r,g,b = ((rgb_arr >> 16) & 255), ((rgb_arr >> 8) & 255), (rgb_arr & 255)
+    img_bgr = cv2.merge((numpy.asarray(b,dtype='uint8'),numpy.asarray(g,dtype='uint8'),numpy.asarray(r,dtype='uint8')))
     [r, c, x, y, z] = segment_by_color(img_bgr, arr, req.name)
     hdr = Header(frame_id='realsense_link', stamp=rospy.Time.now())
     pub_point.publish(PointStamped(header=hdr, point=Point(x=x, y=y, z=z)))
@@ -89,13 +71,8 @@ def main():
     loop = rospy.Rate(10)
     while not rospy.is_shutdown():
         cv2.imshow("Color Segmentation", img_bgr)
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
+        cv2.waitKey(1)
         loop.sleep()
-
-    cv2.destroyAllWindows()
-
+    
 if __name__ == '__main__':
     main()
-
-    

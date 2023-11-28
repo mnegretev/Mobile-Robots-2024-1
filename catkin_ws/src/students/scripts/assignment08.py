@@ -20,7 +20,7 @@ from std_msgs.msg import Float64MultiArray
 from geometry_msgs.msg import PointStamped
 from manip_msgs.srv import *
 
-NAME = "FULL_NAME"
+NAME = "Guillen Castillo Jorge Luis"
 
 def get_model_info():
     global joints, transforms
