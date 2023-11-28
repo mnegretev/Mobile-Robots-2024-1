@@ -255,8 +255,8 @@ def main():
             print("######### STATE 0: "+current_state+" ###########")
             print("Waiting for new task")
             say("Hello, my name is Justina.")
-            rospy.sleep(3.0)
-            say("how can I help you?")
+            rospy.sleep(1.0)
+            
             new_task = False
             goal = False
             move_head(0,0)
@@ -270,6 +270,8 @@ def main():
         ######################### STATE 1  ##########################################
         elif current_state == "SM_WAITING_NEW_TASK":
             print("######### STATE 1: "+current_state+" ###########")
+            say("how can I help you?")
+            rospy.sleep(3.0)
             if new_task:
                 requested_object, requested_location = parse_command(recognized_speech)
                 new_task = False
@@ -277,7 +279,7 @@ def main():
                 current_state = "SM_MOVE_HEAD"
                 print("New task received: " + requested_object + " to  " + str(requested_location))
                 say("Executing the command, " + recognized_speech)
-                rospy.sleep(3)
+                rospy.sleep(2)
             
         ######################### STATE 2  ##########################################
                 
@@ -286,13 +288,13 @@ def main():
             print("Moving head ")
             say("Moving head")
             move_head(0, -1)
-            rospy.sleep(2)
+            rospy.sleep(1)
             current_state = "SM_MOVE_TO_OBJECTS"
         
         ######################### STATE 3  ############################################
         elif current_state == "SM_MOVE_TO_OBJECTS":
             print("######### STATE 3: "+current_state+" ###########")
-            rospy.sleep(2)
+            rospy.sleep(1)
             if requested_object == "pringles":
                 move_left_arm(-1.6, 0.2, 0.0, 1.8, 0.0, 1.3, 0.0)
                 print("Preparing to take " + obj)
@@ -304,7 +306,7 @@ def main():
                 print("Preparing to take " + obj )
                 say("Preparing to take to" + obj)
                 rospy.sleep(2)
-                move_base(5.0, 0.0, 5.1)
+                move_base(5.0, 0.0, 6.5)
             print("Get to the position of the pringles")  
             rospy.sleep(2)  
             current_state = "SM_RECOGNIZE_OBJ"
@@ -330,7 +332,7 @@ def main():
                 move_left_gripper(0.4)
             else:
                 move_right_arm(0.0, -0.2, 0.1, 1.4, 0.5, 0.0, 0.0)
-                move_left_gripper(0.35)
+                move_left_gripper(0.4)
             current_state = "SM_TAKE_OBJECT"
 
         ######################### STATE 6  ############################################
@@ -357,6 +359,7 @@ def main():
             print("######### STATE 7: "+current_state+" ###########")
             print("I will begin the journey towards the destination.")
             say("I will begin the journey towards the destination.")
+            rospy.sleep(3.5)
             move_base(-3.0, 0.0, 4)
             go_to_goal_pose(goal_x=requested_location[0], goal_y= requested_location[1])
             if requested_location[0]== 8.0:
@@ -369,13 +372,13 @@ def main():
             print("######### STATE 8: "+current_state+" ###########")
             goal = True
             if goal:
-                print("Arrived to destination")
-                say("Arrived to destination")
+                print("I Arrived to destination")
+                say("I Arrived to destination")
                 rospy.sleep(3)
                 print("Prepare to receive the:" + obj)
                 say("Prepare to receive the:" + obj)
                 rospy.sleep(2)
-                if requested_object == "Pringles":
+                if requested_object == "pringles":
                     move_left_gripper(0.5)
                 else:
                     move_right_gripper(0.5)
