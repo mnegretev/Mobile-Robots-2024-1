@@ -38,27 +38,25 @@ def segment_by_color(img_bgr, points, obj_name):
     #   Example: 'points[240,320][1]' gets the 'y' value of the point corresponding to
     #   the pixel in the center of the image.
     #
-    if (obj_name == 'pringles'): 
-        min_valor = numpy.array([25, 50, 50]) 
-        max_valor = numpy.array([35, 255, 255])
-    else: #[10,200, 50] - [20, 255, 255]
-        min_valor = numpy.array([10,200, 50]) 
-        max_valor = numpy.array([20, 255, 255])
-    img_hsv = cv2.cvtColor(img_bgr,cv2.COLOR_BGR2HSV)
-    img_bin = cv2.inRange(img_hsv,min_valor, max_valor)
-    img_non_zero = cv2.findNonZero(img_bin)
-    centroide_pixel = cv2.mean(img_non_zero)
-    centroide_r, centroide_c = centroide_pixel[0], centroide_pixel[1]
-    x, y, z = 0,0,0
-    for cord in img_non_zero:
-        c,r = cord[0]           # columna , renglon
-        x += points[r,c][0] # accedemos a la posicion actual (r,c) en la imagen y al valor del 1r elemento (coordenada x)
-        y += points[r,c][1]
-        z += points[r,c][2]
-    centroide_x = x/len(img_non_zero)
-    centroide_y = y/len(img_non_zero)
-    centroide_z = z/len(img_non_zero)
-    return[centroide_r,centroide_c, centroide_x, centroide_y, centroide_z]
+     # Set HSV upper and lower limits to detect the objects
+    hsv_lower_limit = numpy.array([25, 50, 50]) if obj_name == "pringles" else numpy.array([10, 200, 50])
+    hsv_upper_limit = numpy.array([35, 255, 255]) if obj_name == "pringles" else numpy.array([20, 255, 255])
+    # Change color scapce from RGB to HSV
+    hsv_img = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2HSV)
+    # Determine which set of pixels belongs to the selected hsv range
+    bin_img = cv2.inRange(hsv_img, hsv_lower_limit, hsv_upper_limit)
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT,(5,5))
+    bin_img = cv2.morphologyEx(bin_img, cv2.MORPH_OPEN, kernel)
+    # Determine the centroid (in pixels) of the detected object
+    nonzero_elements = cv2.findNonZero(bin_img)
+    centroid_px = cv2.mean(nonzero_elements)
+    px_x, px_y = int(centroid_px[0]), int(centroid_px[1])
+    # Determine the centroid of the object in the cartesian space    
+    x = points[px_y, px_x][0]
+    y = points[px_y, px_x][1]
+    z = points[px_y, px_x][2]
+    
+    return [px_x,px_y,x,y,z]
 
 def callback_find_object(req):
     global pub_point, img_bgr
