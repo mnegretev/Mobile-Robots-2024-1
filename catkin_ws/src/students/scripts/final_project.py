@@ -29,7 +29,7 @@ from sound_play.msg import SoundRequest
 from vision_msgs.srv import *
 from hri_msgs.msg import *
 
-NAME = "FULL NAME"
+NAME = "Santana Apreza Erik Yoel"
 
 #
 # Global variable 'speech_recognized' contains the last recognized sentence
@@ -171,7 +171,7 @@ def calculate_inverse_kinematics_left(x,y,z,roll, pitch, yaw):
     req_ik.yaw   = yaw
     clt = rospy.ServiceProxy("/manipulation/la_ik_pose", InverseKinematicsPose2Pose)
     resp = clt(req_ik)
-    return resp.q
+    return resp.[resp.q1, resp.q2, resp.q3, resp.q4, resp.q5, resp.q6, resp.q7]
 
 #
 # This function calls the service for calculating inverse kinematics for right arm (practice 08)
@@ -241,27 +241,120 @@ def main():
     #
     # FINAL PROJECT 
     #
-    executing_task = False
-    current_state = "SM_INIT"
     new_task = False
+    executing_task = False
+    recognized_speech = ""
+    goal_reached = False
+
+    current_state = "E0_START"
+    requested_object   = ""
+    requested_location = [0,0]
+
+    # Bucle Principal
     while not rospy.is_shutdown():
-        if current_state == "SM_INIT":
-            print("Waiting for new task")
-            current_state = "SM_WAITING_NEW_TASK"
-        elif current_state == "SM_WAITING_NEW_TASK":
-            if new_task:
-                requested_object, requested_location = parse_command(recognized_speech)
-                print("New task received: " + requested_object + " to  " + str(requested_location))
-                say("Executing the command, " + recognized_speech)
-                current_state = "SM_MOVE_HEAD"
+        # Máquina de estados
+        if current_state == "E0_START": 			# Estado 0: Inicio de la máquina
+            print("E0:INICIANDO MÀQUINA DE ESTADOS")
+            if(new_task == True):
                 new_task = False
-                executing_task = True
-                
-        elif current_state == "SM_MOVE_HEAD":
-            print("Moving head to look at table...")
-            move_head(0, -0.9)
-            current_state = "SM_FIND_OBJECT"
-        loop.sleep()
+                current_state = "E1_HELLO"
+
+        elif current_state == "E1_HELLO": 		# Estado 1: Saludo del robot con voz
+            print("E1: SALUDO")
+            say("Hello world")
+            current_state = "E2_RECOR"
+
+        elif current_state == "E2_RECOR":		# Estado 2: Reconocimiento de orden
+            print("E2: RECONOCIMIENTO DE OBJETO")
+            say("Robot is recognizing object")
+            obj,loc = parse_command(recognized_speech) 	#Reconocimiento de voz
+            print("   Objeto a agarrar: "+ obj) 
+            print("   Localizaciòn: ["+ str(loc[0]) + "," + str(loc[1])+ "]")
+            current_state = "E3_HEAD"
+
+        elif current_state == "E3_HEAD":		# Estado 3: Posicionamiento de cabeza
+            print("E3: POSICIONAMIENTO DE CABEZA")
+            move_head(0,-0.9)
+            current_state = "E4_FIND_OBJ"
+
+        elif current_state == "E4_FIND_OBJ":		# Estado 4: Búsqueda de objeto
+            print("E4: BUSCANDO OBJETO")
+            say("Finding object")
+            x_obj, y_obj, z_obj = find_object(obj)		
+            print("   Centroide de objeto: ["+str(x_obj)+","+str(y_obj)+","+ str(z_obj)+"]")
+            current_state = "E5_TRANSFORM"
+
+        elif current_state == "E5_TRANSFORM":		# Estado 5: Transformación de coordenadas
+         print("E5: TRANSFORMACIÒN DE COORDENADAS")
+         if obj == "pringles":
+                xt, yt, zt = transform_point(x_obj, y_obj, z_obj,"realsense_link","shoulders_left_link")
+         else:
+                xt, yt, zt = transform_point(x_obj, y_obj, z_obj,"realsense_link","shoulders_right_link")
+         print("   Coordenadas transformadas: ["+ str(xt) + str(yt) + str(zt))
+         current_state = "E6_CIN_INV"
+
+        elif current_state == "E6_CIN_INV":		# Estado 6: Cinemática inversa
+         print("E6: CINEMÀTICA INVERSA")
+         if obj == "pringles":
+                q = calculate_inverse_kinematics_left(xt,yt,zt,3,-1.57,-3)
+         else:
+                q = calculate_inverse_kinematics_right(xt,yt+.001,zt,3,-1.57,-3)
+         print(q)
+         current_state = "E7_ARM_INI"
+
+        elif current_state == "E7_ARM_INI":		# Estado 7: Brazo a posición inicial
+         print("E7: BRAZO A POSICION INICIAL")
+         if obj == "pringles":    
+          print("   Brazo izquierdo a posicion inicial")
+          move_left_arm(-0.5,0,0,2.3,0,0,0)
+         else:
+          print("   Brazo derecho a posicion inicial")
+          move_right_arm(-0.5,0,0,2.3,0,0,0)
+          move_right_arm(-0.4,0,0,2.3,.5,0,0)
+         current_state = "E8_ARM_OBJ"
+
+        elif current_state == "E8_ARM_OBJ":		# Estado 8: Brazo a objeto
+            print("E8: BRAZO A OBJETO")
+            say("Robot is moving its arm")
+            if obj == "pringles":
+             move_left_gripper(0.5)
+             move_left_arm(q[0],q[1],q[2],q[3],q[4],q[5],q[6])
+            else:
+             move_right_gripper(0.5)
+             move_right_arm(q[0],q[1],q[2],q[3],q[4],q[5],q[6])
+            current_state = "E9_CLOSE"
+
+        elif current_state == "E9_CLOSE":		# Estado 9: Cerrar mano
+            print("E9: CERRANDO MANO")
+            if obj == "pringles":
+             move_left_arm(-0,0,0,1.7,0,0,0)
+             move_left_gripper(-0.5)
+             move_left_arm(0,0,0,3,0,0,-1)
+            else:
+             #move_right_arm(-0,0,0,1.7,0,0,0)
+             move_right_gripper(-0.5)
+             move_right_arm(0,0,0,3,0,0,-0.8)
+             say("I got it")
+            current_state = "E10_TO_GOAL"
+
+        
+        elif current_state == "E10_TO_GOAL":		# Estado 10: Moverse a meta
+         print("E10: DIRIGIRSE A META ")
+         go_to_goal_pose(loc[0],loc[1])
+         if goal_reached:
+           move_left_gripper(0.5)
+           print("   Objeto depositado")
+           goal_reached = False
+           current_state = "E11_TO_HOME"
+
+        elif current_state == "E11_TO_HOME" :		# Estado 11: Regresar a inicio
+         print("E11: REGRESAR A INICIO")
+         go_to_goal_pose(2,5.86)
+         if goal_reached == True:
+          print("Fin")
+          move_base(0,1,15)
+          move_left_gripper(0)
+          current_state = "E12_END"
 
 if __name__ == '__main__':
     try:
