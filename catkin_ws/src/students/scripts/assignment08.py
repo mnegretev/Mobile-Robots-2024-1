@@ -71,9 +71,10 @@ def forward_kinematics(q, Ti, Wi):
         H = tft.concatenate_matrices(H, tft.concatenate_matrices(Ti[i], Ri))  # Multiplica H con Ti y Ri
     
     H = tft.concatenate_matrices(H, Ti[7])  # Multiplica H por Ti[7]
-    xyzrpy = tft.euler_from_matrix(H, 'sxyz')#[:3]# Get xyzRPY from the resulting Homogeneous Transformation 'H'
-    #print("syzrpy " +str(xyzrpy))
-    return numpy.asarray([H[0,3], H[1,3], H[2,3], xyzrpy[0], xyzrpy[1], xyzrpy[2]])
+    x,y,z = H[0,3], H[1,3], H[2,3]
+    r, p, y = list(tft.euler_from_matrix(H))
+    res = [x, y, z, r, p, y]
+    return numpy.asarray(res)
 
 def jacobian(q, Ti, Wi):
     delta_q = 0.000001
@@ -148,7 +149,7 @@ def inverse_kinematics_xyzrpy(x, y, z, roll, pitch, yaw, Ti, Wi, initial_guess):
     q = numpy.asarray(initial_guess)  # Initial guess
     #return q
     while iterations < max_iterations:
-        p = forward_kinematics(q)
+        p = forward_kinematics(q, Ti, Wi)
         error = p - pd
         
         # Asegurar que los ángulos de orientación del error estén en el rango [-pi, pi]
@@ -164,7 +165,7 @@ def inverse_kinematics_xyzrpy(x, y, z, roll, pitch, yaw, Ti, Wi, initial_guess):
         # Asegurar que todos los ángulos q estén en el rango [-pi, pi]
         q = ((q + numpy.pi) % (2 * numpy.pi)) - numpy.pi
         
-        p = forward_kinematics(q)
+        p = forward_kinematics(q, Ti, Wi)
         error = p - pd
         
         # Asegurar que los ángulos de orientación del error estén en el rango [-pi, pi]

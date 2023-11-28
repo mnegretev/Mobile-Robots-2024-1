@@ -18,7 +18,7 @@ from nav_msgs.msg import Path
 from nav_msgs.srv import *
 from collections import deque
 
-NAME = "FULL NAME"
+NAME = "ORTEGA MENDOZA RUBEN"
 
 msg_path = Path()
 
@@ -66,8 +66,8 @@ def a_star(start_r, start_c, goal_r, goal_c, grid_map, cost_map):
             #g = g_values[row, col] + abs(row-r) + abs(col-c) + cost_map[r][c]
             #h = 0#abs(goal_r - r) + abs(goal_c - c)
             g = g_values[row, col] + math.sqrt((row-r)**2 + (col - c)**2) + cost_map[r][c]
-            # h = math.sqrt((goal_r-r)**2 + (goal_c - c)**2)
-            h = 0
+            h = math.sqrt((goal_r-r)**2 + (goal_c - c)**2)
+            #h = 0
             #
             
             f = g + h                         
