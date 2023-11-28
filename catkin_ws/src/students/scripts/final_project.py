@@ -171,7 +171,7 @@ def calculate_inverse_kinematics_left(x,y,z,roll, pitch, yaw):
     req_ik.yaw   = yaw
     clt = rospy.ServiceProxy("/manipulation/la_ik_pose", InverseKinematicsPose2Pose)
     resp = clt(req_ik)
-    return resp.q
+     return [resp.q1, resp.q2, resp.q3, resp.q4, resp.q5, resp.q6, resp.q7]
 
 #
 # This function calls the service for calculating inverse kinematics for right arm (practice 08)
