@@ -29,7 +29,7 @@ from sound_play.msg import SoundRequest
 from vision_msgs.srv import *
 from hri_msgs.msg import *
 
-NAME = "FULL NAME"
+NAME = "González Chávez Cesar de Jesús"
 
 #
 # Global variable 'speech_recognized' contains the last recognized sentence
@@ -177,7 +177,7 @@ def calculate_inverse_kinematics_left(x,y,z,roll, pitch, yaw):
 # This function calls the service for calculating inverse kinematics for right arm (practice 08)
 # and returns the calculated articular position.
 #
-def calculate_inverse_kinematics_left(x,y,z,roll, pitch, yaw):
+def calculate_inverse_kinematics_right(x,y,z,roll, pitch, yaw):
     req_ik = InverseKinematicsRequest()
     req_ik.x = x
     req_ik.y = y
@@ -187,7 +187,7 @@ def calculate_inverse_kinematics_left(x,y,z,roll, pitch, yaw):
     req_ik.yaw   = yaw
     clt = rospy.ServiceProxy("/manipulation/ra_ik_pose", InverseKinematicsPose2Pose)
     resp = clt(req_ik)
-    return [resp.q1, resp.q2, resp.q3, resp.q4, resp.q5, resp.q6, resp.q7]
+    return resp.q
 
 #
 # Calls the service for finding object (practice 08) and returns
@@ -213,6 +213,17 @@ def transform_point(x,y,z, source_frame, target_frame):
     obj_p.point.x, obj_p.point.y, obj_p.point.z = x,y,z
     obj_p = listener.transformPoint(target_frame, obj_p)
     return [obj_p.point.x, obj_p.point.y, obj_p.point.z]
+
+def set_home():
+    move_head(0, 0)
+    move_right_arm(0, 0, 0, 0, 0, 0, 0)
+    move_left_arm(0, 0, 0, 0, 0, 0, 0)
+    move_right_gripper(0)
+    move_left_gripper(0)
+
+def move_near():
+    move_base(0.3,0,1)
+    move_head(0,-0.8)
 
 def main():
     global new_task, recognized_speech, executing_task, goal_reached
@@ -244,23 +255,79 @@ def main():
     executing_task = False
     current_state = "SM_INIT"
     new_task = False
+    goal_reached = False
     while not rospy.is_shutdown():
         if current_state == "SM_INIT":
             print("Waiting for new task")
             current_state = "SM_WAITING_NEW_TASK"
+            
         elif current_state == "SM_WAITING_NEW_TASK":
             if new_task:
                 requested_object, requested_location = parse_command(recognized_speech)
                 print("New task received: " + requested_object + " to  " + str(requested_location))
                 say("Executing the command, " + recognized_speech)
-                current_state = "SM_MOVE_HEAD"
                 new_task = False
                 executing_task = True
+                current_state = "SM_MOVE_NEAR_OBJECT"
+                rospy.sleep(3)
                 
-        elif current_state == "SM_MOVE_HEAD":
-            print("Moving head to look at table...")
-            move_head(0, -0.9)
-            current_state = "SM_FIND_OBJECT"
+        elif current_state == "SM_MOVE_NEAR_OBJECT":
+            set_home()
+            move_near()
+            current_state = "FIND_OBJECT"
+            rospy.sleep(3)
+                
+        elif current_state == "SM_FIND_OBJECT":
+            print("Finding " + requested_object)
+            say("Finding " + requested_object)
+            xc, yc, zc = find_object(requested_object)
+            target = "shoulders_left_link" if requested_object == "pringles" else "shoulders_right_link"
+            x0, y0, z0 = transform_point(xc, yc, zc, "realsense_link", target)
+            print("Object located")
+            say("Object located")
+            current_state = "SM_TAKING_OBJECT"
+            rospy.sleep(3)
+            
+        elif current_state == "SM_TAKING_OBJECT":
+            print("Taking the object")
+            say("Taking the object")
+            if requested_object == "pringles":
+            	move_left_arm(0, 0.25, 0, 2, 0.1, -0.5, 0)
+            	move_left_gripper(0.4)
+            	q = calculate_inverse_kinematics_left(x0, y0, z0, 0, -1.6, 0)
+            	move_left_gripper(-0.25)
+            else:
+            	move_right_arm(0, -0.25, 0.2, 1.5, 0.5, 0, 0)
+            	move_right_arm(0.4)
+            	q = calculate_inverse_kinematics_right(x0, y0, z0, 0, -1.6, 0)
+            	move_right_gripper(-0.25)
+            print("Object taken")
+            say("Object taken")
+            current_state = "SM_MOVING_TO_LOCATION"
+            rospy.sleep(3)
+            
+        elif current_state == "SM_MOVING_TO_LOCATION":
+            print("Moving to " + requested_location)
+            say("Moving to " + requested_location)
+            move_base(-1,0,1)
+            go_to_goal_pose(requested_location[0], requested_location[1])
+            if goal_reached:
+            	print("Location reached, dropping the " + requested_object)
+            	say("Location reached, dropping the " + requested_object)
+            	if requested_object == "pringles":
+            	    move_left_gripper(0.4)
+            	else:
+            	    move_right_gripper(0.4)
+            current_state = "SM_TASK_FINISHED"
+            rospy.sleep(3)
+            
+        elif current_state == "SM_TASK_FINISHED":
+            executing_task = False
+            print("Task finished, you're welcome")
+            say("Task finished, you're welcome")
+            current_state = "SM_INIT"
+            rospy.sleep(3)
+            
         loop.sleep()
 
 if __name__ == '__main__':
