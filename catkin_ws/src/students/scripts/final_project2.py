@@ -23,14 +23,14 @@ import time
 from std_msgs.msg import String, Float64MultiArray, Float64, Bool
 from nav_msgs.msg import Path
 from nav_msgs.srv import GetPlan, GetPlanRequest
+from manip_msgs.srv import *
 from sensor_msgs.msg import PointCloud2
 from geometry_msgs.msg import Twist, PoseStamped, Pose, Point, PointStamped
 from sound_play.msg import SoundRequest
 from vision_msgs.srv import *
 from hri_msgs.msg import *
-from manip_msgs.srv import *
 
-NAME = "Arriaga CAllejas"
+NAME = "Arriaga Mejia Jose Carlos"
 
 #
 # Global variable 'speech_recognized' contains the last recognized sentence
