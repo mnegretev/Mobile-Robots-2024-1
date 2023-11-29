@@ -309,8 +309,8 @@ def main():
             rospy.sleep(3)
             
         elif current_state == "SM_MOVING_TO_LOCATION":
-            print("Moving to " + requested_location)
-            say("Moving to " + requested_location)
+            print("Moving to location")
+            say("Moving to location")
             move_base(-1,0,1)
             go_to_goal_pose(requested_location[0], requested_location[1])
             if goal_reached:
