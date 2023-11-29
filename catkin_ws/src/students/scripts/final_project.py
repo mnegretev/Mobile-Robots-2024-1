@@ -179,7 +179,7 @@ def calculate_inverse_kinematics_left(x,y,z,roll, pitch, yaw):
 # and returns the calculated articular position.
 #
 def calculate_inverse_kinematics_right(x,y,z,roll, pitch, yaw):
-    req_ik = InverseKinematicsRequestPose2Pose()
+    req_ik = InverseKinematicsPose2PoseRequest()
     req_ik.x = x
     req_ik.y = y
     req_ik.z = z
