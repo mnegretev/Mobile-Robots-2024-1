@@ -163,6 +163,7 @@ def say(text):
 # and returns the calculated articular position.
 #
 def calculate_inverse_kinematics_left(x,y,z,roll, pitch, yaw):
+    req_ik = InverseKinematicsPose2PoseRequest()
     req_ik.x = x
     req_ik.y = y
     req_ik.z = z
@@ -178,7 +179,7 @@ def calculate_inverse_kinematics_left(x,y,z,roll, pitch, yaw):
 # and returns the calculated articular position.
 #
 def calculate_inverse_kinematics_right(x,y,z,roll, pitch, yaw):
-    req_ik = InverseKinematicsRequest()
+    req_ik = InverseKinematicsRequestPose2Pose()
     req_ik.x = x
     req_ik.y = y
     req_ik.z = z
@@ -315,9 +316,17 @@ def main():
             	print("Location reached, dropping the " + requested_object)
             	say("Location reached, dropping the " + requested_object)
             	if requested_object == "pringles":
-            	    move_left_gripper(0.4)
+            	   move_left_arm(0, 0.25, 0, 2, 0.1, -0.5, 0)
+            	   move_left_gripper(0.4)
+            	   q = calculate_inverse_kinematics_left(x0+0.1, y0, z0+0.09, 0, -1.6, 0)
+            	   move_left_arm(q[0], q[1], q[2], q[3], q[4], q[5], q[6])
+            	   move_left_gripper(-0.2)
             	else:
-            	    move_right_gripper(0.4)
+            	   move_right_arm(0, -0.25, 0.2, 1.5, 0.5, 0, 0)
+            	   move_right_arm(0.4)
+            	   q = calculate_inverse_kinematics_right(x0+0.1, y0, z0+0.09, 0, -1.6, 0)
+            	   move_right_arm(q[0], q[1], q[2], q[3], q[4], q[5], q[6])
+            	   move_right_gripper(-0.2)
             current_state = "SM_TASK_FINISHED"
             rospy.sleep(3)
             
