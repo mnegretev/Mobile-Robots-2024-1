@@ -58,7 +58,7 @@ def main():
     print("PRACTICE 03 - " + NAME)
     rospy.init_node("practice03", anonymous=True)
     rospy.Service('/path_planning/smooth_path', SmoothPath, callback_smooth_path)
-    pub_path = rospy.Publisher('/path_planning/smoothed_path', Path, queue_size=10)  # Changed topic name
+    pub_path = rospy.Publisher('/path_planning/smooth_path', Path, queue_size=10)  # Changed topic name
     loop = rospy.Rate(1)
     msg_smooth_path.header.frame_id = "map"
     alpha = rospy.get_param("~alpha", 0.9)

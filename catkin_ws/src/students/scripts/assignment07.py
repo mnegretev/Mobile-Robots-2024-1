@@ -22,31 +22,41 @@ from vision_msgs.msg import VisionObject
 NAME = "JARQUIN LOPEZ DANIEL EDUARDO"
 
 def segment_by_color(img_bgr, points, obj_name):
-    if obj_name == 'pringles':
-        # Color range for 'pringles' object in HSV
-        lower_color = numpy.array([25, 50, 50])
-        upper_color = numpy.array([35, 255, 255])
-    else:
-        # Color range for other objects in HSV
-        lower_color = numpy.array([10, 200, 50])
-        upper_color = numpy.array([20, 255, 255])
-
-    img_hsv = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2HSV)
-
-    mask = cv2.inRange(img_hsv, lower_color, upper_color)
-
-    nonzero_points = cv2.findNonZero(mask)
-    if nonzero_points is not None:
-        centroid = cv2.mean(nonzero_points)
-        r, c = centroid[0], centroid[1]
-    else:
-        return [0, 0, 0, 0, 0]
-
-    x = points[int(r), int(c)][0]
-    y = points[int(r), int(c)][1]
-    z = points[int(r), int(c)][2]
-
-    return [r, c, x, y, z]
+    #
+    # TODO:
+    # - Assign lower and upper color limits according to the requested object:
+    #   If obj_name == 'pringles': [25, 50, 50] - [35, 255, 255]
+    #   otherwise                : [10,200, 50] - [20, 255, 255]
+    # - Change color space from RGB to HSV.
+    #   Check online documentation for cv2.cvtColor function
+    # - Determine the pixels whose color is in the selected color range.
+    #   Check online documentation for cv2.inRange
+    # - Calculate the centroid of all pixels in the given color range (ball position).
+    #   Check online documentation for cv2.findNonZero and cv2.mean
+    # - Calculate the centroid of the segmented region in the cartesian space
+    #   using the point cloud 'points'. Use numpy array notation to process the point cloud data.
+    #   Example: 'points[240,320][1]' gets the 'y' value of the point corresponding to
+    #   the pixel in the center of the image.
+    #
+     # Set HSV upper and lower limits to detect the objects
+    hsv_lower_limit = numpy.array([25, 50, 50]) if obj_name == "pringles" else numpy.array([10, 200, 50])
+    hsv_upper_limit = numpy.array([35, 255, 255]) if obj_name == "pringles" else numpy.array([20, 255, 255])
+    # Change color scapce from RGB to HSV
+    hsv_img = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2HSV)
+    # Determine which set of pixels belongs to the selected hsv range
+    bin_img = cv2.inRange(hsv_img, hsv_lower_limit, hsv_upper_limit)
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT,(5,5))
+    bin_img = cv2.morphologyEx(bin_img, cv2.MORPH_OPEN, kernel)
+    # Determine the centroid (in pixels) of the detected object
+    nonzero_elements = cv2.findNonZero(bin_img)
+    centroid_px = cv2.mean(nonzero_elements)
+    px_x, px_y = int(centroid_px[0]), int(centroid_px[1])
+    # Determine the centroid of the object in the cartesian space    
+    x = points[px_y, px_x][0]
+    y = points[px_y, px_x][1]
+    z = points[px_y, px_x][2]
+    
+    return [px_x,px_y,x,y,z]
 
 def callback_find_object(req):
     global pub_point, img_bgr
@@ -81,4 +91,3 @@ def main():
     
 if __name__ == '__main__':
     main()
-    
