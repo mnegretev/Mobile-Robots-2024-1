@@ -274,7 +274,7 @@ def main():
         elif current_state == "SM_MOVE_NEAR_OBJECT":
             set_home()
             move_near()
-            current_state = "FIND_OBJECT"
+            current_state = "SM_FIND_OBJECT"
             rospy.sleep(3)
                 
         elif current_state == "SM_FIND_OBJECT":
