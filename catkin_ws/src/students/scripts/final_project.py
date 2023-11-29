@@ -241,15 +241,11 @@ def main():
     #
     # FINAL PROJECT 
     #
-    global executing_task
+    executing_task = False
     current_state = "SM_INIT"
     new_task = False
     goal = False 
     
-    global initial_location
-    global goal_location
-    global object_name
-    global current_location
     initial_location = (0.0, 0.0)
     
     while not rospy.is_shutdown():
@@ -263,13 +259,14 @@ def main():
     ##----State 1
         elif current_state == "SM_WAITING_NEW_TASK":
             print("State 1: " + current_state + "\n")
-	if new_task:
-		requested_object, requested_location = parse_command(recognized_speech)
-		print("New task received: " + requested_object + " to  " + str(requested_location))
-		say("Executing the command, " + recognized_speech)
-		current_state = "SM_MOVE_HEAD"
-		new_task = False
-		executing_task = True
+            if new_task:
+            	requested_object, requested_location = parse_command(recognized_speech)
+            	print("New task received: " + requested_object + " to  " + str(requested_location))
+            	say("Executing the command, " + recognized_speech)
+            	current_state = "SM_MOVE_HEAD"
+            	new_task = False
+            	executing_task = True
+            	rospy.sleep(5)
                 
     ##----State 2
         elif current_state == "SM_MOVE_HEAD":
@@ -278,122 +275,175 @@ def main():
             print("Moving head to look at table...")
             rospy.sleep(3)
             move_head(0, -0.9)
-            if (requested_object = "pringles") or (requested_object = "drink"):
-            	say("Object found")
-            	current_state = "SM_FIND_OBJECT"
-            else
-            	say("Object not found. Return to first state")
-            	print("Return to first state :(")
-		current_state == "SM_INIT":
+            current_state == "SM_FIND_OBJECT"
             
     ##----State 3
         elif current_state == "SM_FIND_OBJECT":
             print("State 3: " + current_state + "\n")
-            print("Object found")
-            # Find the requested object using the vision service
-            object_pose = find_object(requested_object)
-
-		if object_pose is not None:
-		    # Update the goal location with the object's pose
-		    goal_location = object_pose
-		    current_state = "SM_NAVIGATE_TO_LOCATION"
-		else:
-		    print("Object not found")
-		    say("Object not found")
-		    current_state = "SM_INIT"
-		    
+            if (requested_object == "pringles"):
+            	say("Object found")
+            	move_left_arm(-1.6, 0.2, 0.0, 1.8, 0.0, 1.3, 0.0)
+                say("I am moving towards the object" + resquested_object)
+                rospy.sleep(3)
+                move_base(5.0, 0.0, 3.9)
+            else:
+            	 move_right_arm(-1.6, -0.2, 0.0, 1.7, 1.2, 0.0, 0.0)
+                print(" >>> I am moving towards the object")
+                say("I am moving towards the object")
+                rospy.sleep(3)
+                move_base(5.0, 0.0, 5.1)
+            print(" >>> I reached the object")
+            say("I reached the object")
+            rospy.sleep(5)
+            current_state = "SM_RECOGNIZE_OBJECT"
+	
 	##----State 4
-	elif current_state == "SM_NAVIGATE_TO_LOCATION":
-	    print("State 4: " + current_state + "\n")
-	    print("Navigating to goal location")
-
-	    if new_task:
-		object_name, new_goal_location = parse_command(recognized_speech)
-		new_task = False
-		goal_location = new_goal_location
-
-	    if goal_location != current_location:
-		executing_task = True
-
-		go_to_goal_pose(goal_location)
-
-		while not goal_reached:
-		    pass
-
-		executing_task = False
-		current_state = "SM_GRASP_OBJECT"
-	    else:
-		print("Goal location not updated")
-		current_state = "SM_INIT"
+        elif current_state == "SM_RECOGNIZE_OBJECT":
+			print("State 4: " + current_state + "\n")
+			object_position = find_object(requested_object)
+			say("I have found the " + requested_object)
+			print("Object position: ", object_position)
+			object_in_base_link = transform_point(object_position[0], object_position[1], object_position[2], "realsense_link", "base_link")
+			print("Object position in base link: ", object_in_base_link)
+			current_state = "SM_GRASP_OBJECT"
 		
 	##----State 5
-	elif current_state == "SM_GRASP_OBJECT":
-	    print("State 5: " + current_state + "\n")
-	    print("Grasping object")
-
-	    if is_object_within_reach(object_name):
-		executing_task = True
-
-		grasp_object(object_name)
-
-		while not object_grasped:
-		    pass
-
-		executing_task = False
-		current_state = "SM_TRANSPORT_OBJECT"
-	    else:
-		print("Object not within reach")
-		current_state = "SM_INIT"
+        elif current_state == "SM_GRASP_OBJECT":
+			ik_solution = calculate_inverse_kinematics_left(object_in_base_link[0], object_in_base_link[1], object_in_base_link[2], 0, 0, 0)
+			move_left_arm(*ik_solution)
+			move_left_gripper(0.5)  # Asume que 0.5 es la posición cerrada para la pinza
+			say("Grasping the " + requested_object)
+			rospy.sleep(2)  # Espera a que la acción se complete
+			current_state = "SM_TRANSPORT_OBJECT"
 		
 	##----State 6
-	elif current_state == "SM_TRANSPORT_OBJECT":
-	    print("State 6: " + current_state + "\n")
-	    print("Transporting object")
+        elif current_state == "SM_TRANSPORT_OBJECT":
+			print("State 6: " + current_state + "\n")
+			# Supongamos que necesitas llevar el objeto a una mesa, aquí deberías mover la base del robot
+			go_to_goal_pose(*requested_location)
+			say("Transporting the " + requested_object + " to the table.")
+			goal_reached = False
+			while not goal_reached and not rospy.is_shutdown():
+				rospy.sleep(1)  # Espera activa hasta que se alcance el objetivo
+			current_state = "SM_RELEASE_OBJECT"
+		
+	##----State 7
+        elif current_state == "SM_RELEASE_OBJECT":
+			print("State 7: " + current_state + "\n")
+			# Aquí abrirías la pinza para soltar el objeto
+			move_left_gripper(1.0)  # Asume que 1.0 es la posición abierta para la pinza
+			say("Releasing the " + requested_object)
+			rospy.sleep(2)  # Espera a que la acción se complete
+			current_state = "SM_RETURN_TO_INIT"
+    
+	##----State 8
+        elif current_state == "SM_RETURN_TO_INIT":
+			print("State 8: " + current_state + "\n")
+			say("Returning to initial position.")
+			go_to_goal_pose(*initial_location)
+			goal_reached = False
+			while not goal_reached and not rospy.is_shutdown():
+				rospy.sleep(1)  # Espera activa hasta que se alcance el objetivo inicial
+			current_state = "SM_INIT"
+			executing_task = False
+			print("Task completed. Ready for a new task.")
+        
+	##----State 9
+        else:
+			print("Error in SM. Last state: " + current_state)
+			break;
+        	
+		loop.sleep()
+		
+    ##----State 4
+        #elif current_state == "SM_NAVIGATE_TO_LOCATION":
+        #	print("State 4: " + current_state + "\n")
+        #	print("Navigating to goal location")
+        #if new_task:
+        #	object_name, new_goal_location = parse_command(recognized_speech)
+        #	new_task = False
+        #	goal_location = new_goal_location
+        	
+        #if goal_location != current_location:
+        #	executing_task = True
+        #	go_to_goal_pose(goal_location)
+        #	while not goal_reached:
+        #		pass
+        #	executing_task = False
+        #	current_state = "SM_GRASP_OBJECT"
+        #else:
+        #	print("Goal location not updated")
+        #	current_state = "SM_INIT"
 
-	    if not object_grasped:
-		current_state = "SM_INIT"
-		return
+        	     	
+    ##----State 5
+     #    elif current_state == "SM_GRASP_OBJECT":
+    #		print("State 5: " + current_state + "\n")
+    #		print("Grasping object")
 
-	    transport_object(object_name)
+	#    if is_object_within_reach(object_name):
+	#	executing_task = True
 
-	    while not object_transported:
-		pass
+	#	grasp_object(object_name)
 
-	    executing_task = False
-	    current_state = "SM_RELEASE_OBJECT"
+	#	while not object_grasped:
+	#	    pass
+
+	#	executing_task = False
+	#	current_state = "SM_TRANSPORT_OBJECT"
+	 #   else:
+	#	print("Object not within reach")
+	#	current_state = "SM_INIT"
+		
+    ##----State 6
+    #elif current_state == "SM_TRANSPORT_OBJECT":
+	#    print("State 6: " + current_state + "\n")
+	 #   print("Transporting object")
+
+	  #  if not object_grasped:
+	#	current_state = "SM_INIT"
+	#	return
+
+	 #   transport_object(object_name)
+
+	  #  while not object_transported:
+	#	pass
+
+	 #   executing_task = False
+	  #  current_state = "SM_RELEASE_OBJECT"
 	    
 	##----State 7
-	elif current_state == "SM_RELEASE_OBJECT":
-	    print("State 7: " + current_state + "\n")
-	    print("Releasing object")
+	#elif current_state == "SM_RELEASE_OBJECT":
+	#    print("State 7: " + current_state + "\n")
+	#    print("Releasing object")
 
-	    if not object_grasped:
-		current_state = "SM_INIT"
-		return
+	#    if not object_grasped:
+	#	current_state = "SM_INIT"
+	#	return
 
-	    release_object(object_name)
+	#    release_object(object_name)
 
-	    while object_grasped:
-		pass
+	#    while object_grasped:
+	#	pass
 
-	    executing_task = False
-	    current_state = "SM_RETURN_TO_INIT"
+	#    executing_task = False
+	 #   current_state = "SM_RETURN_TO_INIT"
 		     
 	##----State 8
-	elif current_state == "SM_RETURN_TO_INIT":
-	    print("State 8: " + current_state + "\n")
-	    print("Returning to initial position")
-	    say("Returning to initial position")
+	#elif current_state == "SM_RETURN_TO_INIT":
+	 #   print("State 8: " + current_state + "\n")
+	 #   print("Returning to initial position")
+	  #  say("Returning to initial position")
 
-	    go_to_goal_pose(initial_location)
+	   # go_to_goal_pose(initial_location)
 
-	    while current_location != initial_location:
-		pass
+	    #while current_location != initial_location:
+		#pass
 
-	    executing_task = False
-	    current_state = "SM_INIT"   
+	#    executing_task = False
+	 #   current_state = "SM_INIT"   
 	    
-        loop.sleep()
+      
 
 if __name__ == '__main__':
     try:
@@ -401,4 +451,3 @@ if __name__ == '__main__':
     except rospy.ROSInterruptException:
         pass
     
-
