@@ -52,8 +52,8 @@ def a_star(start_r, start_c, goal_r, goal_c, grid_map, cost_map):
     iterations = 0
     
     while len(open_list) > 0 and [row, col] != [goal_r, goal_c]:
-        [row, col] = heapq.heappop(open_list)[1]         
-        in_closed_list[row,col] = True                  
+        [row, col] = heapq.heappop(open_list)[1]
+        in_closed_list[row,col] = True
         adjacent_nodes = [[row+i, col+j] for [i,j] in adjacent_idx]
         for [r,c] in adjacent_nodes:
             if grid_map[r,c] > 40 or grid_map[r,c] < 0 or in_closed_list[r,c]: 
@@ -64,7 +64,7 @@ def a_star(start_r, start_c, goal_r, goal_c, grid_map, cost_map):
             # instead of Manhattan distance
             #
             #g = g_values[row, col] + abs(row-r) + abs(col-c) + cost_map[r][c]
-            #h = 0#abs(goal_r - r) + abs(goal_c - c)
+            #h = abs(goal_r - r) + abs(goal_c - c)
             g = g_values[row, col] + math.sqrt((row-r)**2 + (col - c)**2) + cost_map[r][c]
             h = math.sqrt((goal_r-r)**2 + (goal_c - c)**2)
             #
@@ -142,4 +142,3 @@ if __name__ == '__main__':
         main()
     except rospy.ROSInterruptException:
         pass
-    
