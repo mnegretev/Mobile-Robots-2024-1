@@ -28,6 +28,7 @@ from geometry_msgs.msg import Twist, PoseStamped, Pose, Point, PointStamped
 from sound_play.msg import SoundRequest
 from vision_msgs.srv import *
 from hri_msgs.msg import *
+from manip_msgs.srv import *
 
 NAME = "González Chávez Cesar de Jesús"
 
