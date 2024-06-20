@@ -1,0 +1,3 @@
+<launch>
+  <node name="sound_play" pkg="sound_play" type="soundplay_node.py" output="screen"/>
+</launch>

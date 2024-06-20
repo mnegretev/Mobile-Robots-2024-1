@@ -1,0 +1,44 @@
+<launch>
+  <include file="$(find surge_et_ambula)/launch/justina/gazebo_simul/justina_hardware_gazebo.launch"/>
+  
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find config_files)/rviz/final_project.rviz"/>
+  
+  <node name="justina_gui" pkg="justina_gui" type="justina_gui_node" output="screen">
+    <param name="la_predefined" value="$(find config_files)/justina/manipulation/la_predefined.yaml"/>
+    <param name="ra_predefined" value="$(find config_files)/justina/manipulation/ra_predefined.yaml"/>
+    <param name="hd_predefined" value="$(find config_files)/justina/manipulation/hd_predefined.yaml"/>
+    <remap from="/camera/depth_registered/points" to="/hardware/realsense/points"/>
+  </node>
+
+  <include file="$(find surge_et_ambula)/launch/justina/gazebo_simul/justina_gazebo_controllers.launch"/>
+  <include file="$(find surge_et_ambula)/launch/justina/navigation.launch"/>
+
+  <node name="speech_recog" pkg="sprec_pocketsphinx" type="asr.py" output="screen">
+    <param name="gram" value="$(find sprec_pocketsphinx)/vocab/final_project.gram"/>
+    <param name="dict" value="$(find sprec_pocketsphinx)/vocab/voice_cmd.dic"/>
+    <param name="grammar" value="final_project_gram"/>
+    <param name="rule" value="simple_command"/>
+    <param name="lm" value=":default"/>
+  </node>
+  <node name="audio_sender" pkg="sprec_pocketsphinx" type="send_audio.py" output="screen"/>
+  <node name="sound_play" pkg="sound_play" type="soundplay_node.py" output="screen"/>
+
+  <!-- Map inflation -->
+  <node name="practice01a"  pkg="students" type="practice01a.py"> 
+    <param name="inflation_radius" value="0.25"/>
+  </node>
+  <!-- Cost Map -->
+  <node name="practice02a"  pkg="students" type="practice02a.py">
+    <param name="cost_radius" value="0.5"/>
+  </node>
+  <!-- Path planning by A* -->
+  <node name="practice02b"  pkg="students" type="practice02b.py" output="screen"/>
+  <!-- Path following -->
+  <node name="assignment05"   pkg="students" type="assignment05.py"  output="screen"/>
+  <!-- Path Smoothing -->
+  <node name="practice03"   pkg="students" type="practice03.py"  output="screen"/>
+  <!-- Color segmentation -->
+  <node name="assignment07"   pkg="students" type="assignment07.py"  output="screen"/>
+  <!-- Inverse kinematics -->
+  <node name="assignment08"   pkg="students" type="assignment08.py"  output="screen"/>
+</launch>

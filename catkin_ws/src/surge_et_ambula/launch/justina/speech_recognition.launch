@@ -1,0 +1,11 @@
+<launch>
+  <node name="speech_recog" pkg="sprec_pocketsphinx" type="asr.py" output="screen">
+    <param name="gram" value="$(find sprec_pocketsphinx)/vocab/final_project.gram"/>
+    <param name="dict" value="$(find sprec_pocketsphinx)/vocab/voice_cmd.dic"/>
+    <param name="grammar" value="final_project_gram"/>
+    <param name="rule" value="simple_command"/>
+    <param name="lm" value=":default"/>
+  </node>
+
+  <node name="audio_sender" pkg="sprec_pocketsphinx" type="send_audio.py" output="screen"/>  
+</launch>
